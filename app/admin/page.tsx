@@ -109,7 +109,7 @@ export default function AdminPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
+          id: userId,
           isActive: !currentStatus,
         }),
       });
@@ -134,7 +134,7 @@ export default function AdminPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
+          id: userId,
           password: newPassword,
         }),
       });
