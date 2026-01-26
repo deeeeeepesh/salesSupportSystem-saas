@@ -10,6 +10,9 @@ import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
+// Mark as dynamic to prevent SSG for this page
+export const dynamic = 'force-dynamic';
+
 export default function ProductsPage() {
   const { status } = useSession();
   const router = useRouter();

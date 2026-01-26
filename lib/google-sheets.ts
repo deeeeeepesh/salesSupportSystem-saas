@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 import slugify from 'slugify';
-import { Product, SheetRow } from '@/types';
+import { Product } from '@/types';
 import { parseVariant } from './utils';
 
 const SHEET_NAME = 'Price List';
@@ -31,7 +31,7 @@ function getGoogleSheetsClient() {
 /**
  * Convert checkbox value to boolean
  */
-function parseBoolean(value: any): boolean {
+function parseBoolean(value: unknown): boolean {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') {
     return value.toLowerCase() === 'true' || value === '1' || value.toLowerCase() === 'yes';
@@ -42,9 +42,9 @@ function parseBoolean(value: any): boolean {
 /**
  * Parse number from string or number
  */
-function parseNumber(value: any): number | null {
+function parseNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
-  const num = typeof value === 'number' ? value : parseFloat(value);
+  const num = typeof value === 'number' ? value : parseFloat(String(value));
   return isNaN(num) ? null : num;
 }
 
@@ -59,11 +59,11 @@ function generateProductId(brand: string, model: string, variant: string): strin
 /**
  * Transform raw sheet row to Product object
  */
-function transformSheetRow(row: any, index: number): Product | null {
+function transformSheetRow(row: unknown[], index: number): Product | null {
   try {
-    const brand = row[0] || '';
-    const model = row[1] || '';
-    const variant = row[3] || '';
+    const brand = String(row[0] || '');
+    const model = String(row[1] || '');
+    const variant = String(row[3] || '');
     
     // Skip rows without essential data
     if (!brand || !model) return null;
@@ -74,17 +74,17 @@ function transformSheetRow(row: any, index: number): Product | null {
       id: generateProductId(brand, model, variant),
       brand: brand.trim(),
       model: model.trim(),
-      image: row[2] || '',
+      image: String(row[2] || ''),
       variant: variant.trim(),
       mrp: parseNumber(row[4]),
       mop: parseNumber(row[5]),
-      selloutFromDate: row[6] || null,
-      selloutToDate: row[7] || null,
-      lastUpdated: row[8] || null,
-      quickPitch: row[9] || null,
-      bankOffers: row[10] || null,
-      upgradeExchangeOffers: row[11] || null,
-      storeOffersGifts: row[12] || null,
+      selloutFromDate: String(row[6] || ''),
+      selloutToDate: String(row[7] || ''),
+      lastUpdated: String(row[8] || ''),
+      quickPitch: String(row[9] || ''),
+      bankOffers: String(row[10] || ''),
+      upgradeExchangeOffers: String(row[11] || ''),
+      storeOffersGifts: String(row[12] || ''),
       weeklyFocus: parseBoolean(row[13]),
       allModels: parseBoolean(row[14]),
       newLaunch: parseBoolean(row[15]),

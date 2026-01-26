@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
@@ -110,7 +110,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, boolean | string> = {};
     if (typeof isActive === 'boolean') {
       updateData.isActive = isActive;
     }
