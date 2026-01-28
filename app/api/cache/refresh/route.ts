@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { clearProductsCache, getCacheStatus } from '@/lib/google-sheets';
+import { publishMessage } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,15 @@ export async function POST() {
 
     const beforeStatus = getCacheStatus();
     clearProductsCache();
+    
+    // Broadcast cache refresh event to all connected clients
+    // Log error if broadcast fails but don't block the response
+    try {
+      await publishMessage('cache:refresh', new Date().toISOString());
+    } catch (broadcastError) {
+      console.error('Failed to broadcast cache refresh event:', broadcastError);
+      console.warn('Cache cleared locally but clients may not have been notified');
+    }
     
     return NextResponse.json({
       message: 'Cache cleared successfully',

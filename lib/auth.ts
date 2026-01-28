@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { prisma } from './db';
+import { generateSessionId, updateUserSession } from './session';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -51,6 +52,13 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        
+        // Generate and store new session ID on sign in
+        const sessionId = generateSessionId();
+        token.sessionId = sessionId;
+        
+        // Update user's active session in database
+        await updateUserSession(user.id, sessionId);
       }
       return token;
     },
@@ -58,6 +66,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.sessionId = token.sessionId as string;
       }
       return session;
     }
