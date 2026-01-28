@@ -20,7 +20,18 @@ export async function POST(request: NextRequest) {
     const { sessionId } = body;
 
     if (!sessionId) {
-      return NextResponse.json({ valid: false, reason: 'No session ID' }, { status: 400 });
+      return NextResponse.json({ 
+        valid: false, 
+        reason: 'Session identifier is required for validation' 
+      }, { status: 400 });
+    }
+
+    // Verify the sessionId belongs to the authenticated user
+    if (session.user.sessionId !== sessionId) {
+      return NextResponse.json(
+        { valid: false, reason: 'Session identifier mismatch' },
+        { status: 403 }
+      );
     }
 
     const isValid = await validateSession(session.user.id, sessionId);
@@ -28,7 +39,7 @@ export async function POST(request: NextRequest) {
     if (!isValid) {
       return NextResponse.json(
         { valid: false, reason: 'Session invalidated' },
-        { status: 401 }
+        { status: 200 } // Use 200 with valid:false to avoid triggering auth handlers
       );
     }
 

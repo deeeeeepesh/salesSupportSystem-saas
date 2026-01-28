@@ -34,9 +34,10 @@ export function useSessionCheck() {
             setIsInvalidated(true);
             
             // Sign out after a short delay to show the message
+            const LOGOUT_DELAY_MS = 100; // Short delay to allow UI to update
             setTimeout(() => {
               signOut({ callbackUrl: '/?message=logged-out-another-device' });
-            }, 100);
+            }, LOGOUT_DELAY_MS);
           }
         }
       } catch (error) {
@@ -49,7 +50,9 @@ export function useSessionCheck() {
       eventSource.close();
     };
 
-    // Periodic session validation (every 30 seconds)
+    // Periodic session validation (every 5 minutes to reduce database load)
+    // SSE provides real-time updates, polling is just a fallback
+    const VALIDATION_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
     const validationInterval = setInterval(async () => {
       try {
         const response = await fetch('/api/auth/validate-session', {
@@ -71,7 +74,7 @@ export function useSessionCheck() {
       } catch (error) {
         console.error('Error validating session:', error);
       }
-    }, 30000); // 30 seconds
+    }, VALIDATION_INTERVAL_MS);
 
     // Cleanup
     return () => {

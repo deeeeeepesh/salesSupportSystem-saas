@@ -19,7 +19,13 @@ export async function POST() {
     clearProductsCache();
     
     // Broadcast cache refresh event to all connected clients
-    await publishMessage('cache:refresh', new Date().toISOString());
+    // Log error if broadcast fails but don't block the response
+    try {
+      await publishMessage('cache:refresh', new Date().toISOString());
+    } catch (broadcastError) {
+      console.error('Failed to broadcast cache refresh event:', broadcastError);
+      console.warn('Cache cleared locally but clients may not have been notified');
+    }
     
     return NextResponse.json({
       message: 'Cache cleared successfully',

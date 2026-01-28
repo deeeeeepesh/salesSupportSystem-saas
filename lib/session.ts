@@ -22,7 +22,7 @@ export async function updateUserSession(userId: string, sessionId: string): Prom
       },
     });
     
-    // Broadcast session invalidation event
+    // Broadcast session invalidation event AFTER successful database update
     await publishMessage(`session:invalidate:${userId}`, sessionId);
     
     console.log(`Updated session for user ${userId}: ${sessionId}`);

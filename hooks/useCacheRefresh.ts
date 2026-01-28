@@ -26,12 +26,12 @@ export function useCacheRefresh() {
         if (data.type === 'cache-refresh') {
           console.log('Cache refresh event received:', data.timestamp);
           
-          // Invalidate all queries to trigger refetch
-          queryClient.invalidateQueries();
+          // Invalidate only product-related queries to avoid unnecessary refetching
+          queryClient.invalidateQueries({ queryKey: ['products'] });
           
           // Show a notification (optional)
           if (typeof window !== 'undefined') {
-            console.log('Data refreshed automatically');
+            console.log('Product data refreshed automatically');
           }
         } else if (data.type === 'connected') {
           console.log('Successfully connected to cache events stream');
