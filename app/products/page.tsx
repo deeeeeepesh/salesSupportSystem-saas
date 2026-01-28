@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SearchBar from '@/components/SearchBar';
@@ -13,7 +13,17 @@ import { ArrowLeft } from 'lucide-react';
 // Mark as dynamic to prevent SSG for this page
 export const dynamic = 'force-dynamic';
 
-export default function ProductsPage() {
+// Loading component
+function ProductsLoading() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-lg">Loading products...</div>
+    </div>
+  );
+}
+
+// Products content component that uses useSearchParams
+function ProductsContent() {
   const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -228,5 +238,14 @@ export default function ProductsPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<ProductsLoading />}>
+      <ProductsContent />
+    </Suspense>
   );
 }
