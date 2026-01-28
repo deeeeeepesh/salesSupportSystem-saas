@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { clearProductsCache, getCacheStatus } from '@/lib/google-sheets';
+import { publishMessage } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,9 @@ export async function POST() {
 
     const beforeStatus = getCacheStatus();
     clearProductsCache();
+    
+    // Broadcast cache refresh event to all connected clients
+    await publishMessage('cache:refresh', new Date().toISOString());
     
     return NextResponse.json({
       message: 'Cache cleared successfully',

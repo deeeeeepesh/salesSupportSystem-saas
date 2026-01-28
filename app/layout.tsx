@@ -4,7 +4,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { SessionMonitor } from "@/components/SessionMonitor";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -38,6 +39,9 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryClientProvider client={queryClient}>
+            <Suspense fallback={null}>
+              <SessionMonitor />
+            </Suspense>
             {children}
           </QueryClientProvider>
         </SessionProvider>
