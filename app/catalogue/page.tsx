@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Product } from '@/types';
 import { LogOut, ShieldCheck } from 'lucide-react';
+import { useCacheRefresh } from '@/hooks/useCacheRefresh';
 
 export default function CataloguePage() {
   const { data: session, status } = useSession();
@@ -26,6 +27,13 @@ export default function CataloguePage() {
   const [allModels, setAllModels] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Listen for cache refresh events and reload products
+  useCacheRefresh(() => {
+    if (status === 'authenticated') {
+      fetchProducts();
+    }
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {

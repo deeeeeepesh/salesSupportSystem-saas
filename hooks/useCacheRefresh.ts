@@ -5,10 +5,17 @@ import { useQueryClient } from '@tanstack/react-query';
 
 /**
  * Hook to listen for cache refresh events and invalidate queries
+ * Also provides ability to trigger custom callbacks
  */
-export function useCacheRefresh() {
+export function useCacheRefresh(onRefresh?: () => void) {
   const queryClient = useQueryClient();
   const eventSourceRef = useRef<EventSource | null>(null);
+  const onRefreshRef = useRef(onRefresh);
+
+  // Update ref when callback changes
+  useEffect(() => {
+    onRefreshRef.current = onRefresh;
+  }, [onRefresh]);
 
   useEffect(() => {
     // Create EventSource connection to SSE endpoint
@@ -28,6 +35,11 @@ export function useCacheRefresh() {
           
           // Invalidate only product-related queries to avoid unnecessary refetching
           queryClient.invalidateQueries({ queryKey: ['products'] });
+          
+          // Call custom refresh callback if provided
+          if (onRefreshRef.current) {
+            onRefreshRef.current();
+          }
           
           // Show a notification (optional)
           if (typeof window !== 'undefined') {

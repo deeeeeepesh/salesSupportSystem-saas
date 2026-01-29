@@ -9,6 +9,7 @@ import ProductCard from '@/components/ProductCard';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useCacheRefresh } from '@/hooks/useCacheRefresh';
 
 // Loading component
 function ProductsLoading() {
@@ -41,6 +42,14 @@ function ProductsContent() {
   const [selectedRom, setSelectedRom] = useState<number[]>([]);
   const [sortBy, setSortBy] = useState('latest');
   const [filter, setFilter] = useState(searchParams.get('filter') || '');
+
+  // Listen for cache refresh events and reload products
+  useCacheRefresh(() => {
+    if (status === 'authenticated') {
+      fetchBrands();
+      fetchProducts(1, true);
+    }
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
