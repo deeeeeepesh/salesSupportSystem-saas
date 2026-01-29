@@ -1,10 +1,9 @@
 # Multi-stage build for Next.js
 FROM node:18-alpine AS base
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl libc6-compat
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files
