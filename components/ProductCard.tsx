@@ -1,32 +1,26 @@
 import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Product } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatPrice, getPlaceholderImage } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
+import { SafeImage } from '@/components/SafeImage';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const imageUrl = product.image || getPlaceholderImage();
-  
   return (
     <Link href={`/product/${product.id}`}>
       <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
         <CardContent className="p-4">
           <div className="relative w-full h-48 mb-3">
-            <Image
-              src={imageUrl}
+            <SafeImage
+              src={product.image}
               alt={`${product.brand} ${product.model}`}
               fill
               className="object-contain"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = getPlaceholderImage();
-              }}
             />
           </div>
           

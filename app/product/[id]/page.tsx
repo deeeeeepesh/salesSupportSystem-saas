@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
-import Image from 'next/image';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatPrice, formatDate, getPlaceholderImage } from '@/lib/utils';
+import { formatPrice, formatDate } from '@/lib/utils';
 import { ArrowLeft, Tag, Smartphone } from 'lucide-react';
+import { SafeImage } from '@/components/SafeImage';
 
 export default function ProductDetailPage() {
   const { status } = useSession();
@@ -81,8 +81,6 @@ export default function ProductDetailPage() {
     );
   }
 
-  const imageUrl = product.image || getPlaceholderImage();
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -98,15 +96,11 @@ export default function ProductDetailPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="relative w-full aspect-square">
-                  <Image
-                    src={imageUrl}
+                  <SafeImage
+                    src={product.image}
                     alt={`${product.brand} ${product.model}`}
                     fill
                     className="object-contain"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = getPlaceholderImage();
-                    }}
                     priority
                   />
                 </div>

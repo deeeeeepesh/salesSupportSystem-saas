@@ -65,5 +65,5 @@ export function formatDate(date: string | null): string {
  * Generate placeholder image URL
  */
 export function getPlaceholderImage(): string {
-  return "/placeholder.png";
+  return "/placeholder.svg";
 }
