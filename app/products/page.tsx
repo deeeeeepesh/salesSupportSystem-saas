@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SearchBar from '@/components/SearchBar';
@@ -43,29 +43,13 @@ function ProductsContent() {
   const [sortBy, setSortBy] = useState('latest');
   const [filter, setFilter] = useState(searchParams.get('filter') || '');
 
-  // Listen for cache refresh events and reload products
-  useCacheRefresh(() => {
-    if (status === 'authenticated') {
-      fetchBrands();
-      fetchProducts(1, true);
-    }
-  });
-
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/');
     }
   }, [status, router]);
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchBrands();
-      fetchProducts(1, true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, searchTerm, selectedBrands, minPrice, maxPrice, selectedRam, selectedRom, sortBy, filter]);
-
-  const fetchBrands = async () => {
+  const fetchBrands = useCallback(async () => {
     try {
       const res = await fetch('/api/products?perPage=1000');
       const data = await res.json();
@@ -74,9 +58,9 @@ function ProductsContent() {
     } catch (err) {
       console.error('Failed to fetch brands:', err);
     }
-  };
+  }, []);
 
-  const fetchProducts = async (pageNum: number, reset: boolean = false) => {
+  const fetchProducts = useCallback(async (pageNum: number, reset: boolean = false) => {
     try {
       if (reset) {
         setLoading(true);
@@ -118,7 +102,23 @@ function ProductsContent() {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [searchTerm, selectedBrands, minPrice, maxPrice, selectedRam, selectedRom, sortBy, filter]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchBrands();
+      fetchProducts(1, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, searchTerm, selectedBrands, minPrice, maxPrice, selectedRam, selectedRom, sortBy, filter]);
+
+  // Listen for cache refresh events and reload products
+  useCacheRefresh(useCallback(() => {
+    if (status === 'authenticated') {
+      fetchBrands();
+      fetchProducts(1, true);
+    }
+  }, [status, fetchBrands, fetchProducts]));
 
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {

@@ -34,6 +34,13 @@ export function SafeImage({
   
   // Use placeholder if no src or error occurred
   const imageSrc = !src || error ? placeholderSrc : src;
+  
+  // Only handle error if we're not already showing the placeholder
+  const handleError = () => {
+    if (imageSrc !== placeholderSrc) {
+      setError(true);
+    }
+  };
 
   // For fill mode, width and height are not needed
   if (fill) {
@@ -43,7 +50,7 @@ export function SafeImage({
         alt={alt}
         fill
         className={className}
-        onError={() => setError(true)}
+        onError={handleError}
         priority={priority}
         sizes={sizes}
         unoptimized={imageSrc === placeholderSrc}
@@ -59,7 +66,7 @@ export function SafeImage({
       width={width || 300}
       height={height || 300}
       className={className}
-      onError={() => setError(true)}
+      onError={handleError}
       priority={priority}
       unoptimized={imageSrc === placeholderSrc}
     />

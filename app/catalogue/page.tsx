@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import SearchBar from '@/components/SearchBar';
@@ -28,26 +28,13 @@ export default function CataloguePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Listen for cache refresh events and reload products
-  useCacheRefresh(() => {
-    if (status === 'authenticated') {
-      fetchProducts();
-    }
-  });
-
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/');
     }
   }, [status, router]);
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchProducts();
-    }
-  }, [status]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -72,7 +59,21 @@ export default function CataloguePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchProducts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
+  // Listen for cache refresh events and reload products
+  useCacheRefresh(useCallback(() => {
+    if (status === 'authenticated') {
+      fetchProducts();
+    }
+  }, [status, fetchProducts]));
 
   const handleSearch = (value: string) => {
     if (value.trim()) {
