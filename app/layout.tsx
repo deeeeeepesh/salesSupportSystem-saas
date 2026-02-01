@@ -6,6 +6,7 @@ import { SessionProvider } from "next-auth/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, Suspense } from "react";
 import { SessionMonitor } from "@/components/SessionMonitor";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -41,6 +42,7 @@ export default function RootLayout({
           <QueryClientProvider client={queryClient}>
             <Suspense fallback={null}>
               <SessionMonitor />
+              <AnalyticsTracker />
             </Suspense>
             {children}
           </QueryClientProvider>

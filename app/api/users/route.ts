@@ -24,6 +24,11 @@ export async function GET() {
         isActive: true,
         createdAt: true,
         updatedAt: true,
+        totalVisits: true,
+        totalPageViews: true,
+        totalDuration: true,
+        totalRefreshes: true,
+        lastActiveAt: true,
       },
       orderBy: { createdAt: 'desc' },
     });

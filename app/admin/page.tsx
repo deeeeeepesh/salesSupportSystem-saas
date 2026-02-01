@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { User } from '@/types';
 import { ArrowLeft, RefreshCw, UserPlus, Shield, Users } from 'lucide-react';
+import { UserAnalytics } from '@/components/admin/UserAnalytics';
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
@@ -31,7 +32,7 @@ export default function AdminPage() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState<'SALES' | 'ADMIN'>('SALES');
+  const [newUserRole, setNewUserRole] = useState<'SALES' | 'ADMIN' | 'STORE_MANAGER'>('SALES');
   const [creatingUser, setCreatingUser] = useState(false);
 
   useEffect(() => {
@@ -266,13 +267,14 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Select value={newUserRole} onValueChange={(value: 'SALES' | 'ADMIN') => setNewUserRole(value)}>
+                    <Select value={newUserRole} onValueChange={(value: 'SALES' | 'ADMIN' | 'STORE_MANAGER') => setNewUserRole(value)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="SALES">Sales</SelectItem>
                         <SelectItem value="ADMIN">Admin</SelectItem>
+                        <SelectItem value="STORE_MANAGER">Store Manager</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -329,6 +331,9 @@ export default function AdminPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* User Analytics */}
+        <UserAnalytics />
       </div>
     </div>
   );

@@ -20,6 +20,13 @@ model User {
   lastLoginAt     DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  
+  // Analytics fields
+  totalVisits     Int       @default(0)
+  totalPageViews  Int       @default(0)
+  totalDuration   Int       @default(0)  // in seconds, cumulative
+  totalRefreshes  Int       @default(0)
+  lastActiveAt    DateTime?
 
   @@map("users")
 }
@@ -27,4 +34,5 @@ model User {
 enum Role {
   SALES
   ADMIN
+  STORE_MANAGER
 }

@@ -10,9 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { ArrowLeft, Tag, Smartphone } from 'lucide-react';
 import { SafeImage } from '@/components/SafeImage';
+import { FinalPrice } from '@/components/FinalPrice';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export default function ProductDetailPage() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
@@ -20,6 +22,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { trackPageView } = useAnalytics();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -45,6 +48,9 @@ export default function ProductDetailPage() {
       
       const data = await res.json();
       setProduct(data);
+      
+      // Track page view
+      trackPageView();
     } catch (err) {
       setError('Failed to load product details');
       console.error(err);
@@ -146,6 +152,12 @@ export default function ProductDetailPage() {
                   </Badge>
                 </div>
               )}
+              
+              {/* Final Price - Only visible to Store Manager and Admin */}
+              <FinalPrice 
+                finalPrice={product.finalPrice}
+                userRole={session?.user?.role || ''}
+              />
             </div>
 
             {/* Specifications */}

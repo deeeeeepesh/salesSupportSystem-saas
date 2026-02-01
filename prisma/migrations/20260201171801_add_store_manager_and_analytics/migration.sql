@@ -1,0 +1,9 @@
+-- AlterEnum
+ALTER TYPE "Role" ADD VALUE 'STORE_MANAGER';
+
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "totalVisits" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalPageViews" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalDuration" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalRefreshes" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "lastActiveAt" TIMESTAMP(3);
