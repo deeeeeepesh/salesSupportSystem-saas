@@ -5,13 +5,21 @@ import { formatPrice } from '@/lib/utils';
 
 interface FinalPriceProps {
   finalPrice: number | null;
-  mop: number | null;
   userRole: string;
 }
 
-export function FinalPrice({ finalPrice, mop, userRole }: FinalPriceProps) {
+export function FinalPrice({ finalPrice, userRole }: FinalPriceProps) {
   const [isRevealed, setIsRevealed] = useState(false);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [timeoutId]);
 
   // Only show to store_manager and admin
   if (userRole !== 'STORE_MANAGER' && userRole !== 'ADMIN') {
@@ -34,15 +42,6 @@ export function FinalPrice({ finalPrice, mop, userRole }: FinalPriceProps) {
 
     setTimeoutId(newTimeoutId);
   };
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [timeoutId]);
 
   return (
     <div className="mt-4 p-4 border rounded-lg bg-muted/30">

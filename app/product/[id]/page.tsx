@@ -155,8 +155,7 @@ export default function ProductDetailPage() {
               
               {/* Final Price - Only visible to Store Manager and Admin */}
               <FinalPrice 
-                finalPrice={product.finalPrice} 
-                mop={product.mop}
+                finalPrice={product.finalPrice}
                 userRole={session?.user?.role || ''}
               />
             </div>
