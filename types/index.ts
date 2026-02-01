@@ -7,6 +7,7 @@ export interface Product {
   variant: string;
   mrp: number | null;
   mop: number | null;
+  finalPrice: number | null; // New field for store managers
   selloutFromDate: string | null;
   selloutToDate: string | null;
   lastUpdated: string | null;
@@ -27,10 +28,15 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'SALES' | 'ADMIN';
+  role: 'SALES' | 'ADMIN' | 'STORE_MANAGER';
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  totalVisits?: number;
+  totalPageViews?: number;
+  totalDuration?: number;
+  totalRefreshes?: number;
+  lastActiveAt?: Date | null;
 }
 
 // API response types
