@@ -7,7 +7,6 @@ export function useAnalytics() {
   const { data: session, status } = useSession();
   const startTimeRef = useRef<number>(Date.now());
   const lastSentRef = useRef<number>(Date.now());
-  const isFirstLoadRef = useRef<boolean>(true);
 
   // Track visit on session start
   useEffect(() => {

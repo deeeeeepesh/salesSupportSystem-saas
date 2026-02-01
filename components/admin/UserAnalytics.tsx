@@ -51,6 +51,17 @@ function formatLastActive(date: Date | null): string {
   return 'Just now';
 }
 
+function getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'outline' {
+  if (role === 'ADMIN') return 'default';
+  if (role === 'STORE_MANAGER') return 'secondary';
+  return 'outline';
+}
+
+function formatRoleDisplay(role: string): string {
+  if (role === 'STORE_MANAGER') return 'Store Manager';
+  return role;
+}
+
 export function UserAnalytics() {
   const [analytics, setAnalytics] = useState<UserAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,14 +157,8 @@ export function UserAnalytics() {
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <Badge 
-                      variant={
-                        user.role === 'ADMIN' ? 'default' : 
-                        user.role === 'STORE_MANAGER' ? 'secondary' : 
-                        'outline'
-                      }
-                    >
-                      {user.role === 'STORE_MANAGER' ? 'Store Manager' : user.role}
+                    <Badge variant={getRoleBadgeVariant(user.role)}>
+                      {formatRoleDisplay(user.role)}
                     </Badge>
                   </td>
                   <td className="text-right py-3 px-4 font-mono">{user.totalVisits}</td>
