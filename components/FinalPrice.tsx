@@ -56,11 +56,6 @@ export function FinalPrice({ finalPrice, userRole }: FinalPriceProps) {
             {isRevealed && finalPrice !== null ? formatPrice(finalPrice) : 'MOP is the best'}
           </span>
         </div>
-        {!isRevealed && (
-          <p className="text-xs text-muted-foreground mt-1 text-center">
-            Double-click to reveal (10s timer)
-          </p>
-        )}
       </div>
     </div>
   );

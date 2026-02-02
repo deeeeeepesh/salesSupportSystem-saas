@@ -186,7 +186,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => router.push('/catalogue')}>
               <ArrowLeft className="h-5 w-5" />
@@ -214,7 +214,7 @@ export default function AdminPage() {
         {/* User Management */}
         <Card className="mb-6">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
@@ -293,9 +293,9 @@ export default function AdminPage() {
             {/* Users List */}
             <div className="space-y-4">
               {users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-medium">{user.name}</span>
                       <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
                         {user.role}
@@ -309,12 +309,13 @@ export default function AdminPage() {
                       Created: {new Date(user.createdAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleToggleUserStatus(user.id, user.isActive)}
                       disabled={user.id === session?.user?.id}
+                      className="w-full sm:w-auto"
                     >
                       {user.isActive ? 'Disable' : 'Enable'}
                     </Button>
@@ -322,6 +323,7 @@ export default function AdminPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleForcePasswordReset(user.id)}
+                      className="w-full sm:w-auto"
                     >
                       Reset Password
                     </Button>
