@@ -104,7 +104,7 @@ export function InstallPrompt() {
             <h3 className="font-semibold text-sm">Install Sales Support System</h3>
             {isIOS ? (
               <p className="text-xs text-muted-foreground">
-                Tap <span className="inline-block mx-1">⬆️</span> then &ldquo;Add to Home Screen&rdquo;
+                Tap <span className="inline-block mx-1" aria-label="the Share button">⬆️</span> then &ldquo;Add to Home Screen&rdquo;
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
