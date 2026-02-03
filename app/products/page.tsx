@@ -113,12 +113,14 @@ function ProductsContent() {
   }, [status, searchTerm, selectedBrands, minPrice, maxPrice, selectedRam, selectedRom, sortBy, filter]);
 
   // Listen for cache refresh events and reload products
-  useCacheRefresh(useCallback(() => {
-    if (status === 'authenticated') {
-      fetchBrands();
-      fetchProducts(1, true);
-    }
-  }, [status, fetchBrands, fetchProducts]));
+  useCacheRefresh({ 
+    onRefresh: useCallback(() => {
+      if (status === 'authenticated') {
+        fetchBrands();
+        fetchProducts(1, true);
+      }
+    }, [status, fetchBrands, fetchProducts])
+  });
 
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {

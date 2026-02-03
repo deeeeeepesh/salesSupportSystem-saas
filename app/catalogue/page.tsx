@@ -69,11 +69,13 @@ export default function CataloguePage() {
   }, [status]);
 
   // Listen for cache refresh events and reload products
-  useCacheRefresh(useCallback(() => {
-    if (status === 'authenticated') {
-      fetchProducts();
-    }
-  }, [status, fetchProducts]));
+  useCacheRefresh({ 
+    onRefresh: useCallback(() => {
+      if (status === 'authenticated') {
+        fetchProducts();
+      }
+    }, [status, fetchProducts])
+  });
 
   const handleSearch = (value: string) => {
     if (value.trim()) {

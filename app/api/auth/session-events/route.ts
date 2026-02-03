@@ -1,10 +1,11 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { subscribeToChannel } from '@/lib/redis';
+import { subscribeToChannel, unsubscribeFromChannel } from '@/lib/redis';
 import { createSSEStream, sendSSEMessage } from '@/lib/sse';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * Server-Sent Events endpoint for session invalidation notifications
@@ -18,23 +19,31 @@ export async function GET(request: NextRequest) {
 
   const userId = session.user.id;
   
-  return createSSEStream(request, async (controller, encoder) => {
+  return createSSEStream(request, async (controller, encoder, isClosed) => {
     // Send initial connection message
-    sendSSEMessage(controller, encoder, { type: 'connected' });
+    sendSSEMessage(controller, encoder, { type: 'connected' }, isClosed);
 
     // Subscribe to session invalidation events for this user
-    await subscribeToChannel(`session:invalidate:${userId}`, (newSessionId) => {
-      sendSSEMessage(controller, encoder, { 
-        type: 'session-invalidated', 
-        userId,
-        newSessionId 
-      });
-    });
+    const subscriptionId = await subscribeToChannel(
+      `session:invalidate:${userId}`,
+      (newSessionId) => {
+        // Check if closed before sending
+        if (!isClosed()) {
+          sendSSEMessage(controller, encoder, { 
+            type: 'session-invalidated', 
+            userId,
+            newSessionId 
+          }, isClosed);
+        }
+      }
+    );
 
-    // Return cleanup function
-    return () => {
-      // Redis cleanup would go here if we implement unsubscribe
-      console.log(`Session events SSE connection closed for user ${userId}`);
+    // Return cleanup function that properly unsubscribes
+    return async () => {
+      if (subscriptionId) {
+        await unsubscribeFromChannel(subscriptionId);
+      }
+      console.log(`Session events SSE closed for user ${userId}`);
     };
   });
 }
