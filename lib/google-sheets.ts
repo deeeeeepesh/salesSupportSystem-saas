@@ -49,10 +49,23 @@ function parseNumber(value: unknown): number | null {
 }
 
 /**
- * Generate unique product ID
+ * Generate unique product ID from brand, model, and variant
+ * Handles special characters like + and & that would otherwise be stripped by slugify
  */
 function generateProductId(brand: string, model: string, variant: string): string {
-  const combined = `${brand}_${model}_${variant}`;
+  // Replace special characters with word equivalents before slugifying
+  // This ensures models like "Pro+" and "Pro" have different IDs
+  // Without this, slugify with strict:true would strip the + and both would have the same ID
+  const sanitize = (str: string): string => {
+    return str
+      .replace(/\+/g, '-plus')    // Pro+ → Pro-plus
+      .replace(/&/g, '-and')      // A & B → A-and-B
+      .replace(/@/g, '-at')       // X@Y → X-at-Y
+      .replace(/#/g, '-hash')     // Model#1 → Model-hash-1
+      .replace(/%/g, '-percent'); // 5% → 5-percent
+  };
+  
+  const combined = `${sanitize(brand)}_${sanitize(model)}_${sanitize(variant)}`;
   return slugify(combined, { lower: true, strict: true });
 }
 
