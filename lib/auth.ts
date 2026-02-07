@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './db';
 import { generateSessionId, updateUserSession } from './session';
 
+// Interval for refreshing user role from database (in milliseconds)
+const ROLE_REFRESH_INTERVAL = 30 * 1000; // 30 seconds
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -49,9 +52,11 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // Initial sign in - set user data from authorize callback
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.roleLastFetchedAt = Date.now();
         
         // Generate and store new session ID on sign in
         const sessionId = generateSessionId();
@@ -59,6 +64,46 @@ export const authOptions: NextAuthOptions = {
         
         // Update user's active session in database
         await updateUserSession(user.id, sessionId);
+      } else {
+        // Subsequent requests - refresh role from database periodically
+        const now = Date.now();
+        const lastFetched = token.roleLastFetchedAt as number || 0;
+        
+        // Only refresh if enough time has passed since last fetch
+        if (now - lastFetched > ROLE_REFRESH_INTERVAL) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: {
+                id: true,
+                role: true,
+                isActive: true,
+              },
+            });
+            
+            // If user doesn't exist or is deactivated, invalidate session
+            if (!dbUser || !dbUser.isActive) {
+              // Clear token to force re-authentication
+              // NextAuth will handle this as an invalid session
+              throw new Error('Session invalidated: user not found or deactivated');
+            }
+            
+            // Update role if it has changed
+            if (token.role !== dbUser.role) {
+              console.log(`Role changed for user ${token.id}: ${token.role} -> ${dbUser.role}`);
+              token.role = dbUser.role;
+            }
+            token.roleLastFetchedAt = now;
+          } catch (error) {
+            // If it's a session invalidation error, re-throw it
+            if (error instanceof Error && error.message.includes('Session invalidated')) {
+              throw error;
+            }
+            // For other errors (e.g., database connection issues),
+            // log and keep existing token to avoid disrupting user session
+            console.error('Error refreshing user role:', error);
+          }
+        }
       }
       return token;
     },
