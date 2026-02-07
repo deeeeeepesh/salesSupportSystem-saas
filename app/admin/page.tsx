@@ -351,6 +351,9 @@ export default function AdminPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-medium">{user.name}</span>
+                      <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
+                        {user.role}
+                      </Badge>
                       <Badge variant={user.isActive ? 'outline' : 'destructive'}>
                         {user.isActive ? 'Active' : 'Disabled'}
                       </Badge>
@@ -360,9 +363,9 @@ export default function AdminPage() {
                       Created: {new Date(user.createdAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                  <div className="flex flex-col lg:flex-row gap-2 w-full lg:w-auto">
                     {/* Role Selector */}
-                    <div className="w-full sm:w-auto min-w-[150px]">
+                    <div className="w-full lg:w-auto min-w-[150px]">
                       <Select
                         value={user.role}
                         onValueChange={(value: 'SALES' | 'STORE_MANAGER' | 'ADMIN') => handleUpdateRole(user.id, value)}
@@ -383,7 +386,7 @@ export default function AdminPage() {
                       size="sm"
                       onClick={() => handleToggleUserStatus(user.id, user.isActive)}
                       disabled={user.id === session?.user?.id}
-                      className="w-full sm:w-auto"
+                      className="w-full lg:w-auto"
                     >
                       {user.isActive ? 'Disable' : 'Enable'}
                     </Button>
@@ -391,7 +394,7 @@ export default function AdminPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleForcePasswordReset(user.id)}
-                      className="w-full sm:w-auto"
+                      className="w-full lg:w-auto"
                     >
                       Reset Password
                     </Button>
@@ -402,7 +405,7 @@ export default function AdminPage() {
                           variant="destructive"
                           size="sm"
                           disabled={user.id === session?.user?.id}
-                          className="w-full sm:w-auto"
+                          className="w-full lg:w-auto"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
