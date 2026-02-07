@@ -111,10 +111,26 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, isActive, password } = body;
+    const { id, isActive, password, role } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Prevent users from changing their own role
+    if (role && id === session.user.id) {
+      return NextResponse.json(
+        { error: 'You cannot change your own role' },
+        { status: 400 }
+      );
+    }
+
+    // Validate role if provided
+    if (role && !['SALES', 'STORE_MANAGER', 'ADMIN'].includes(role)) {
+      return NextResponse.json(
+        { error: 'Invalid role. Must be SALES, STORE_MANAGER, or ADMIN' },
+        { status: 400 }
+      );
     }
 
     const updateData: Record<string, boolean | string> = {};
@@ -123,6 +139,9 @@ export async function PATCH(request: NextRequest) {
     }
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
+    }
+    if (role) {
+      updateData.role = role;
     }
 
     const user = await prisma.user.update({
@@ -143,5 +162,40 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('Error updating user:', error);
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    // Only admins can delete users
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Prevent users from deleting themselves
+    if (id === session.user.id) {
+      return NextResponse.json(
+        { error: 'You cannot delete yourself' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.user.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
   }
 }
