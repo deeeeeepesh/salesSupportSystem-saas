@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './db';
 import { generateSessionId, updateUserSession } from './session';
 
+// Interval for refreshing user role from database (in milliseconds)
+const ROLE_REFRESH_INTERVAL = 30 * 1000; // 30 seconds
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -65,10 +68,9 @@ export const authOptions: NextAuthOptions = {
         // Subsequent requests - refresh role from database periodically
         const now = Date.now();
         const lastFetched = token.roleLastFetchedAt as number || 0;
-        const REFRESH_INTERVAL = 30 * 1000; // 30 seconds
         
         // Only refresh if enough time has passed since last fetch
-        if (now - lastFetched > REFRESH_INTERVAL) {
+        if (now - lastFetched > ROLE_REFRESH_INTERVAL) {
           try {
             const dbUser = await prisma.user.findUnique({
               where: { id: token.id as string },
@@ -87,7 +89,10 @@ export const authOptions: NextAuthOptions = {
             }
             
             // Update role if it has changed
-            token.role = dbUser.role;
+            if (token.role !== dbUser.role) {
+              console.log(`Role changed for user ${token.id}: ${token.role} -> ${dbUser.role}`);
+              token.role = dbUser.role;
+            }
             token.roleLastFetchedAt = now;
           } catch (error) {
             // If it's a session invalidation error, re-throw it
