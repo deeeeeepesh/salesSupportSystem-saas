@@ -15,8 +15,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { User } from '@/types';
-import { ArrowLeft, RefreshCw, UserPlus, Shield, Users } from 'lucide-react';
+import { ArrowLeft, RefreshCw, UserPlus, Shield, Users, Trash2 } from 'lucide-react';
 import { UserAnalytics } from '@/components/admin/UserAnalytics';
 
 export default function AdminPage() {
@@ -147,6 +158,49 @@ export default function AdminPage() {
       alert('Password reset successfully');
     } catch {
       setError('Failed to reset password');
+    }
+  };
+
+  const handleUpdateRole = async (userId: string, newRole: 'SALES' | 'STORE_MANAGER' | 'ADMIN') => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: userId,
+          role: newRole,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update user role');
+      }
+
+      fetchUsers();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update user role';
+      setError(errorMessage);
+      console.error(err);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users?id=${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete user');
+      }
+
+      fetchUsers();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete user';
+      setError(errorMessage);
+      console.error(err);
     }
   };
 
@@ -293,13 +347,10 @@ export default function AdminPage() {
             {/* Users List */}
             <div className="space-y-4">
               {users.map((user) => (
-                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg">
+                <div key={user.id} className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="font-medium">{user.name}</span>
-                      <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
-                        {user.role}
-                      </Badge>
                       <Badge variant={user.isActive ? 'outline' : 'destructive'}>
                         {user.isActive ? 'Active' : 'Disabled'}
                       </Badge>
@@ -309,7 +360,24 @@ export default function AdminPage() {
                       Created: {new Date(user.createdAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                    {/* Role Selector */}
+                    <div className="w-full sm:w-auto min-w-[150px]">
+                      <Select
+                        value={user.role}
+                        onValueChange={(value: 'SALES' | 'STORE_MANAGER' | 'ADMIN') => handleUpdateRole(user.id, value)}
+                        disabled={user.id === session?.user?.id}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SALES">Sales</SelectItem>
+                          <SelectItem value="STORE_MANAGER">Store Manager</SelectItem>
+                          <SelectItem value="ADMIN">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -327,6 +395,34 @@ export default function AdminPage() {
                     >
                       Reset Password
                     </Button>
+                    {/* Delete User with Confirmation */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={user.id === session?.user?.id}
+                          className="w-full sm:w-auto"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the user <strong>{user.name}</strong> ({user.email}).
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
