@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sales-support-v1';
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `sales-support-${CACHE_VERSION}`;
 const CACHE_URLS = [
   '/catalogue',
   '/manifest.json',
@@ -25,12 +26,14 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => name.startsWith('sales-support-') && name !== CACHE_NAME)
           .map((name) => caches.delete(name))
       );
+    }).then(() => {
+      // Take control of all clients immediately
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
 // Fetch event - cache-first for static assets, network-first for API calls
