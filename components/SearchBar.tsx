@@ -12,19 +12,9 @@ interface SearchBarProps {
   onSubmit?: (value: string) => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function SearchBar({ placeholder = "Search by brand, model, or variant...", onSearch, onSubmit }: SearchBarProps) {
+export default function SearchBar({ placeholder = "Search by brand, model, or variant...", onSubmit }: SearchBarProps) {
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (onSubmit) {
-        onSubmit(searchValue);
-      }
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +31,6 @@ export default function SearchBar({ placeholder = "Search by brand, model, or va
         placeholder={placeholder}
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
-        onKeyDown={handleKeyDown}
         className="pl-10"
       />
     </form>
