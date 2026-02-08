@@ -183,13 +183,13 @@ export default function ProductDetailPage() {
                 )}
                 {product.selloutFromDate && (
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-muted-foreground">Available From</span>
+                    <span className="text-muted-foreground">Sellout From</span>
                     <span className="font-medium">{formatDate(product.selloutFromDate)}</span>
                   </div>
                 )}
                 {product.selloutToDate && (
                   <div className="flex justify-between py-2 border-b">
-                    <span className="text-muted-foreground">Available Until</span>
+                    <span className="text-muted-foreground">Sellout To</span>
                     <span className="font-medium">{formatDate(product.selloutToDate)}</span>
                   </div>
                 )}
