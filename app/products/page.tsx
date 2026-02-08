@@ -162,7 +162,7 @@ function ProductsContent() {
             <div className="flex-1 max-w-2xl">
               <SearchBar 
                 placeholder="Search by brand, model, or variant..." 
-                onSearch={setSearchTerm}
+                onSubmit={setSearchTerm}
               />
             </div>
           </div>
