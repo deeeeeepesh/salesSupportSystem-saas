@@ -118,6 +118,9 @@ export default function ProductDetailPage() {
           <div className="space-y-6">
             {/* Badges */}
             <div className="flex gap-2 flex-wrap">
+              {isSelloutActive(product.selloutFromDate, product.selloutToDate) && product.selloutMop !== null && (
+                <Badge className="text-sm bg-green-500 hover:bg-green-600 text-white">Sellout</Badge>
+              )}
               {product.newLaunch && (
                 <Badge variant="destructive" className="text-sm">New Launch</Badge>
               )}
