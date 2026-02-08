@@ -66,8 +66,7 @@ export default function CataloguePage() {
     if (status === 'authenticated') {
       fetchProducts();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
+  }, [status, fetchProducts]);
 
   // Listen for cache refresh events and reload products
   useCacheRefresh({ 
