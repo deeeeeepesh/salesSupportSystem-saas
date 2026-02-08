@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/catalogue');
+      router.replace('/catalogue');
     }
   }, [status, router]);
 
@@ -36,8 +36,6 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError(result.error);
-      } else if (result?.ok) {
-        router.push('/catalogue');
       }
     } catch {
       setError('An unexpected error occurred');
