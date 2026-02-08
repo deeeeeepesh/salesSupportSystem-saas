@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import SearchBar from '@/components/SearchBar';
 import ProductSlider from '@/components/ProductSlider';
+import ProductSliderSkeleton from '@/components/ProductSliderSkeleton';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -87,7 +88,7 @@ export default function CataloguePage() {
     await signOut({ redirect: true, callbackUrl: '/' });
   };
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Loading...</div>
@@ -158,23 +159,33 @@ export default function CataloguePage() {
             </div>
           )}
 
-          <ProductSlider
-            title="New Arrivals"
-            products={newArrivals}
-            viewAllLink="/products?filter=newLaunch"
-          />
+          {loading ? (
+            <>
+              <ProductSliderSkeleton title="New Arrivals" />
+              <ProductSliderSkeleton title="Weekly Focus" />
+              <ProductSliderSkeleton title="All Models" />
+            </>
+          ) : (
+            <>
+              <ProductSlider
+                title="New Arrivals"
+                products={newArrivals}
+                viewAllLink="/products?filter=newLaunch"
+              />
 
-          <ProductSlider
-            title="Weekly Focus"
-            products={weeklyFocus}
-            viewAllLink="/products?filter=weeklyFocus"
-          />
+              <ProductSlider
+                title="Weekly Focus"
+                products={weeklyFocus}
+                viewAllLink="/products?filter=weeklyFocus"
+              />
 
-          <ProductSlider
-            title="All Models"
-            products={allModels}
-            viewAllLink="/products?filter=allModels"
-          />
+              <ProductSlider
+                title="All Models"
+                products={allModels}
+                viewAllLink="/products?filter=allModels"
+              />
+            </>
+          )}
         </div>
       </main>
     </div>

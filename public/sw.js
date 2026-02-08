@@ -1,6 +1,5 @@
 const CACHE_NAME = 'sales-support-v1';
 const CACHE_URLS = [
-  '/',
   '/catalogue',
   '/manifest.json',
   '/icons/icon-192.png',
@@ -49,6 +48,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first for auth-related pages (login page and auth API)
+  if (url.pathname === '/' || url.pathname.startsWith('/api/auth/')) {
+    event.respondWith(
+      fetch(request).catch(() => {
+        return caches.match(request);
+      })
+    );
+    return;
+  }
+
   // Network-first for API calls
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -74,7 +83,6 @@ self.addEventListener('fetch', (event) => {
   // Cache-first for static assets
   if (
     url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|gif|woff|woff2|ttf|ico)$/) ||
-    url.pathname === '/' ||
     url.pathname.startsWith('/catalogue') ||
     url.pathname.startsWith('/product')
   ) {
