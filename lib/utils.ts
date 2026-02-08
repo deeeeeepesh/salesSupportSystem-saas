@@ -51,11 +51,48 @@ export function formatPrice(price: number | null): string {
 
 /**
  * Format date for display
+ * Handles DD/MM/YYYY and DD/MM/YY formats from Google Sheets
  */
 export function formatDate(date: string | null): string {
   if (!date) return "N/A";
+  
   try {
-    return new Date(date).toLocaleDateString('en-IN');
+    // Try to match DD/MM/YYYY or DD/MM/YY pattern
+    const datePattern = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/;
+    const match = date.match(datePattern);
+    
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+      let year = parseInt(match[3], 10);
+      
+      // Convert 2-digit year to 4-digit (assume 20xx for years < 100)
+      if (year < 100) {
+        year += 2000;
+      }
+      
+      // Create date object and validate
+      const parsed = new Date(year, month, day);
+      
+      // Check if the date is valid
+      if (isNaN(parsed.getTime())) {
+        return "Invalid Date";
+      }
+      
+      // Verify the parsed date matches the input (catches invalid dates like 31/02/2025)
+      if (parsed.getFullYear() !== year || parsed.getMonth() !== month || parsed.getDate() !== day) {
+        return "Invalid Date";
+      }
+      
+      return parsed.toLocaleDateString('en-IN');
+    }
+    
+    // Fall back to native Date parsing for other formats (ISO dates, etc.)
+    const parsed = new Date(date);
+    if (isNaN(parsed.getTime())) {
+      return "Invalid Date";
+    }
+    return parsed.toLocaleDateString('en-IN');
   } catch {
     return "Invalid Date";
   }
