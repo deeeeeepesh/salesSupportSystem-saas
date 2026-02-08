@@ -110,6 +110,8 @@ export function getPlaceholderImage(): string {
  * @param selloutFromDate - Start date of sellout (DD/MM/YYYY or DD/MM/YY format)
  * @param selloutToDate - End date of sellout (DD/MM/YYYY or DD/MM/YY format)
  * @returns true if today falls within the sellout period, false otherwise
+ * 
+ * Note: Two-digit years are interpreted as 2000-2099 (e.g., 25 = 2025)
  */
 export function isSelloutActive(selloutFromDate: string | null, selloutToDate: string | null): boolean {
   // Return false if either date is missing or empty
@@ -117,8 +119,42 @@ export function isSelloutActive(selloutFromDate: string | null, selloutToDate: s
     return false;
   }
 
+  /**
+   * Helper function to parse a date string and return a Date object
+   * @param match - Regex match result with day, month, and year groups
+   * @param setToEndOfDay - If true, sets time to 23:59:59.999; otherwise 00:00:00.000
+   * @returns Parsed Date object or null if invalid
+   */
+  const parseDate = (match: RegExpMatchArray, setToEndOfDay: boolean = false): Date | null => {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // JS months are 0-indexed
+    let year = parseInt(match[3], 10);
+    
+    // Convert 2-digit year to 4-digit (assume 20xx for years < 100)
+    if (year < 100) {
+      year += 2000;
+    }
+
+    // Create date object with appropriate time
+    const date = setToEndOfDay 
+      ? new Date(year, month, day, 23, 59, 59, 999)
+      : new Date(year, month, day, 0, 0, 0, 0);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+
+    // Verify the parsed date matches the input (catches invalid dates like 31/02/2025)
+    if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
+      return null;
+    }
+
+    return date;
+  };
+
   try {
-    // Parse the from date
+    // Parse the from and to dates
     const datePattern = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/;
     const fromMatch = selloutFromDate.match(datePattern);
     const toMatch = selloutToDate.match(datePattern);
@@ -127,39 +163,15 @@ export function isSelloutActive(selloutFromDate: string | null, selloutToDate: s
       return false;
     }
 
-    // Parse from date
-    const fromDay = parseInt(fromMatch[1], 10);
-    const fromMonth = parseInt(fromMatch[2], 10) - 1; // JS months are 0-indexed
-    let fromYear = parseInt(fromMatch[3], 10);
-    if (fromYear < 100) {
-      fromYear += 2000;
+    // Parse dates using helper function
+    const fromDate = parseDate(fromMatch, false);
+    const toDate = parseDate(toMatch, true);
+
+    if (!fromDate || !toDate) {
+      return false;
     }
 
-    // Parse to date
-    const toDay = parseInt(toMatch[1], 10);
-    const toMonth = parseInt(toMatch[2], 10) - 1;
-    let toYear = parseInt(toMatch[3], 10);
-    if (toYear < 100) {
-      toYear += 2000;
-    }
-
-    // Create date objects (set time to start/end of day for proper comparison)
-    const fromDate = new Date(fromYear, fromMonth, fromDay, 0, 0, 0, 0);
-    const toDate = new Date(toYear, toMonth, toDay, 23, 59, 59, 999);
     const today = new Date();
-
-    // Check if dates are valid
-    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-      return false;
-    }
-
-    // Verify the parsed dates match the input (catches invalid dates like 31/02/2025)
-    if (fromDate.getFullYear() !== fromYear || fromDate.getMonth() !== fromMonth || fromDate.getDate() !== fromDay) {
-      return false;
-    }
-    if (toDate.getFullYear() !== toYear || toDate.getMonth() !== toMonth || toDate.getDate() !== toDay) {
-      return false;
-    }
 
     // Check if today is within the sellout period
     return today >= fromDate && today <= toDate;
