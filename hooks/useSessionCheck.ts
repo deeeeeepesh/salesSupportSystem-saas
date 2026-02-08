@@ -104,7 +104,7 @@ export function useSessionCheck() {
         eventSourceRef.current = null;
       }
     };
-  }, [status, session]);
+  }, [status, session?.user?.id, session?.user?.sessionId]);
 
   return { isInvalidated };
 }

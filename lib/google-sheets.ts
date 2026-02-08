@@ -8,6 +8,7 @@ const SHEET_NAME = 'Price List';
 // Cache for products
 let productsCache: Product[] | null = null;
 let cacheTimestamp: number | null = null;
+let inFlightRequest: Promise<Product[]> | null = null;
 const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes in milliseconds
 
 /**
@@ -121,43 +122,57 @@ export async function fetchProductsFromSheets(): Promise<Product[]> {
     return productsCache;
   }
 
-  try {
-    const sheets = getGoogleSheetsClient();
-    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-
-    if (!spreadsheetId) {
-      throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID not configured');
-    }
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: `${SHEET_NAME}!A2:Q`, // Extended to include Final Price column
-    });
-
-    const rows = response.data.values || [];
-    console.log(`Fetched ${rows.length} rows from Google Sheets`);
-
-    const products = rows
-      .map((row, index) => transformSheetRow(row, index))
-      .filter((product): product is Product => product !== null);
-
-    // Update cache
-    productsCache = products;
-    cacheTimestamp = Date.now();
-
-    console.log(`Transformed ${products.length} valid products`);
-    return products;
-  } catch (error) {
-    console.error('Error fetching from Google Sheets:', error);
-    
-    // Return cached data if available, even if expired
-    if (productsCache) {
-      console.log('Returning expired cache due to error');
-      return productsCache;
-    }
-    
-    throw error;
+  // If there's already a request in flight, wait for it instead of making a new one
+  if (inFlightRequest) {
+    console.log('Waiting for in-flight request');
+    return inFlightRequest;
   }
+
+  // Create the fetch promise and store it
+  inFlightRequest = (async () => {
+    try {
+      const sheets = getGoogleSheetsClient();
+      const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+
+      if (!spreadsheetId) {
+        throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID not configured');
+      }
+
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${SHEET_NAME}!A2:Q`, // Extended to include Final Price column
+      });
+
+      const rows = response.data.values || [];
+      console.log(`Fetched ${rows.length} rows from Google Sheets`);
+
+      const products = rows
+        .map((row, index) => transformSheetRow(row, index))
+        .filter((product): product is Product => product !== null);
+
+      // Update cache
+      productsCache = products;
+      cacheTimestamp = Date.now();
+
+      console.log(`Transformed ${products.length} valid products`);
+      return products;
+    } catch (error) {
+      console.error('Error fetching from Google Sheets:', error);
+      
+      // Return cached data if available, even if expired
+      if (productsCache) {
+        console.log('Returning expired cache due to error');
+        return productsCache;
+      }
+      
+      throw error;
+    } finally {
+      // Clear in-flight request when done
+      inFlightRequest = null;
+    }
+  })();
+
+  return inFlightRequest;
 }
 
 /**
@@ -174,6 +189,7 @@ export async function getProductById(id: string): Promise<Product | null> {
 export function clearProductsCache(): void {
   productsCache = null;
   cacheTimestamp = null;
+  inFlightRequest = null;
   console.log('Products cache cleared');
 }
 
