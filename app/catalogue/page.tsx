@@ -112,7 +112,7 @@ export default function CataloguePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 max-w-2xl">
-              <SearchBar placeholder="Search products..." onSearch={handleSearch} />
+              <SearchBar placeholder="Search products..." onSubmit={handleSearch} />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
