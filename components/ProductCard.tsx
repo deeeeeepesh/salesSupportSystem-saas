@@ -27,6 +27,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="space-y-2">
             {/* Badges */}
             <div className="flex gap-1 flex-wrap">
+              {isSelloutActive(product.selloutFromDate, product.selloutToDate) && product.selloutMop !== null && (
+                <Badge className="text-xs bg-green-500 hover:bg-green-600 text-white">Sellout</Badge>
+              )}
               {product.newLaunch && (
                 <Badge variant="destructive" className="text-xs">New Launch</Badge>
               )}
