@@ -83,10 +83,10 @@ npm run dev
 2. Rename first sheet to "Price List"
 3. Add header row with exact column names:
    ```
-   Brand | Model | Image | Variant | MRP | MOP | Sellout from date | 
-   Sellout To Date | Last Updated | Quick Pitch | Bank Offers | 
-   Upgrade / Exchange Offers | Store Offers and Gifts | 
-   Weekly Focus | All Models | New Launch
+   Brand | Model | Image | Variant | MRP | MOP | Final Price | Sellout MOP | 
+   Sellout Final | Sellout from date | Sellout To Date | Last Updated | 
+   Quick Pitch | Bank Offers | Upgrade / Exchange Offers | 
+   Store Offers and Gifts | Weekly Focus | All Models | New Launch
    ```
 4. Weekly Focus, All Models, New Launch = checkboxes
 5. Share sheet with service account email (from JSON: `client_email`)

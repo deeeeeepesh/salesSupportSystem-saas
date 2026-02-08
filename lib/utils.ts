@@ -104,3 +104,66 @@ export function formatDate(date: string | null): string {
 export function getPlaceholderImage(): string {
   return "/placeholder.svg";
 }
+
+/**
+ * Check if a sellout period is currently active
+ * @param selloutFromDate - Start date of sellout (DD/MM/YYYY or DD/MM/YY format)
+ * @param selloutToDate - End date of sellout (DD/MM/YYYY or DD/MM/YY format)
+ * @returns true if today falls within the sellout period, false otherwise
+ */
+export function isSelloutActive(selloutFromDate: string | null, selloutToDate: string | null): boolean {
+  // Return false if either date is missing or empty
+  if (!selloutFromDate || !selloutToDate) {
+    return false;
+  }
+
+  try {
+    // Parse the from date
+    const datePattern = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/;
+    const fromMatch = selloutFromDate.match(datePattern);
+    const toMatch = selloutToDate.match(datePattern);
+
+    if (!fromMatch || !toMatch) {
+      return false;
+    }
+
+    // Parse from date
+    const fromDay = parseInt(fromMatch[1], 10);
+    const fromMonth = parseInt(fromMatch[2], 10) - 1; // JS months are 0-indexed
+    let fromYear = parseInt(fromMatch[3], 10);
+    if (fromYear < 100) {
+      fromYear += 2000;
+    }
+
+    // Parse to date
+    const toDay = parseInt(toMatch[1], 10);
+    const toMonth = parseInt(toMatch[2], 10) - 1;
+    let toYear = parseInt(toMatch[3], 10);
+    if (toYear < 100) {
+      toYear += 2000;
+    }
+
+    // Create date objects (set time to start/end of day for proper comparison)
+    const fromDate = new Date(fromYear, fromMonth, fromDay, 0, 0, 0, 0);
+    const toDate = new Date(toYear, toMonth, toDay, 23, 59, 59, 999);
+    const today = new Date();
+
+    // Check if dates are valid
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      return false;
+    }
+
+    // Verify the parsed dates match the input (catches invalid dates like 31/02/2025)
+    if (fromDate.getFullYear() !== fromYear || fromDate.getMonth() !== fromMonth || fromDate.getDate() !== fromDay) {
+      return false;
+    }
+    if (toDate.getFullYear() !== toYear || toDate.getMonth() !== toMonth || toDate.getDate() !== toDay) {
+      return false;
+    }
+
+    // Check if today is within the sellout period
+    return today >= fromDate && today <= toDate;
+  } catch {
+    return false;
+  }
+}

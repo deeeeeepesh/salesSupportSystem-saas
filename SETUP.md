@@ -88,12 +88,12 @@ This creates:
 
 Your Google Sheet must have a tab named **"Price List"** with these columns (in order):
 
-| A | B | C | D | E | F | G | H | I | J | K | L | M | N | O | P |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Brand | Model | Image | Variant | MRP | MOP | Sellout from date | Sellout To Date | Last Updated | Quick Pitch | Bank Offers | Upgrade / Exchange Offers | Store Offers and Gifts | Weekly Focus | All Models | New Launch |
+| A | B | C | D | E | F | G | H | I | J | K | L | M | N | O | P | Q | R | S |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Brand | Model | Image | Variant | MRP | MOP | Final Price | Sellout MOP | Sellout Final | Sellout from date | Sellout To Date | Last Updated | Quick Pitch | Bank Offers | Upgrade / Exchange Offers | Store Offers and Gifts | Weekly Focus | All Models | New Launch |
 
 **Important:**
-- Columns N, O, P (Weekly Focus, All Models, New Launch) should be **checkboxes**
+- Columns Q, R, S (Weekly Focus, All Models, New Launch) should be **checkboxes**
 - Data starts from row 2 (row 1 is header)
 
 ### Example Data

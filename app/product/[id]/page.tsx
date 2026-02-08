@@ -7,7 +7,7 @@ import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatPrice, formatDate } from '@/lib/utils';
+import { formatPrice, formatDate, isSelloutActive } from '@/lib/utils';
 import { ArrowLeft, Tag, Smartphone } from 'lucide-react';
 import { SafeImage } from '@/components/SafeImage';
 import { FinalPrice } from '@/components/FinalPrice';
@@ -139,23 +139,56 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="space-y-2">
-              <div className="text-5xl font-bold text-primary">
-                {formatPrice(product.mop)}
-              </div>
-              {product.mrp && product.mrp !== product.mop && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xl text-muted-foreground line-through">
-                    {formatPrice(product.mrp)}
-                  </span>
-                  <Badge variant="outline" className="text-green-600">
-                    Save {formatPrice(product.mrp - (product.mop || 0))}
-                  </Badge>
-                </div>
+              {isSelloutActive(product.selloutFromDate, product.selloutToDate) && product.selloutMop !== null ? (
+                <>
+                  {/* Sellout MOP - big and bold */}
+                  <div className="text-5xl font-bold text-primary">
+                    {formatPrice(product.selloutMop)}
+                  </div>
+                  {/* Original MOP - smaller, not strikethrough */}
+                  {product.mop && (
+                    <div className="text-xl text-muted-foreground">
+                      {formatPrice(product.mop)}
+                    </div>
+                  )}
+                  {/* MRP - strikethrough with savings badge */}
+                  {product.mrp && product.mrp !== product.selloutMop && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl text-muted-foreground line-through">
+                        {formatPrice(product.mrp)}
+                      </span>
+                      <Badge variant="outline" className="text-green-600">
+                        Save {formatPrice(product.mrp - (product.selloutMop || 0))}
+                      </Badge>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Normal display: MOP big and bold */}
+                  <div className="text-5xl font-bold text-primary">
+                    {formatPrice(product.mop)}
+                  </div>
+                  {/* MRP strikethrough with savings badge */}
+                  {product.mrp && product.mrp !== product.mop && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl text-muted-foreground line-through">
+                        {formatPrice(product.mrp)}
+                      </span>
+                      <Badge variant="outline" className="text-green-600">
+                        Save {formatPrice(product.mrp - (product.mop || 0))}
+                      </Badge>
+                    </div>
+                  )}
+                </>
               )}
               
               {/* Final Price - Only visible to Store Manager and Admin */}
               <FinalPrice 
                 finalPrice={product.finalPrice}
+                selloutFinal={product.selloutFinal}
+                selloutFromDate={product.selloutFromDate}
+                selloutToDate={product.selloutToDate}
                 userRole={session?.user?.role || ''}
               />
             </div>
