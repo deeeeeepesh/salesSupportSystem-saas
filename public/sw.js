@@ -49,7 +49,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Network-first for auth-related pages (login page and auth API)
-  if (url.pathname === '/' || url.pathname.startsWith('/api/auth')) {
+  if (url.pathname === '/' || url.pathname.startsWith('/api/auth/')) {
     event.respondWith(
       fetch(request).catch(() => {
         return caches.match(request);

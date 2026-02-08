@@ -6,9 +6,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ProductSliderSkeletonProps {
   title: string;
+  count?: number;
 }
 
-export default function ProductSliderSkeleton({ title }: ProductSliderSkeletonProps) {
+const DEFAULT_SKELETON_COUNT = 5;
+
+export default function ProductSliderSkeleton({ title, count = DEFAULT_SKELETON_COUNT }: ProductSliderSkeletonProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -41,7 +44,7 @@ export default function ProductSliderSkeleton({ title }: ProductSliderSkeletonPr
           className="flex gap-4 overflow-x-auto scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {[...Array(5)].map((_, index) => (
+          {[...Array(count)].map((_, index) => (
             <div key={index} className="flex-none w-[280px]">
               {/* Skeleton Card */}
               <div className="rounded-lg border bg-card shadow-sm overflow-hidden animate-pulse">
