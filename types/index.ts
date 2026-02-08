@@ -8,6 +8,8 @@ export interface Product {
   mrp: number | null;
   mop: number | null;
   finalPrice: number | null; // New field for store managers
+  selloutMop: number | null;
+  selloutFinal: number | null;
   selloutFromDate: string | null;
   selloutToDate: string | null;
   lastUpdated: string | null;
@@ -69,6 +71,9 @@ export interface SheetRow {
   Variant: string;
   MRP: string | number;
   MOP: string | number;
+  'Final Price': string | number;
+  'Sellout MOP': string | number;
+  'Sellout Final': string | number;
   'Sellout from date': string;
   'Sellout To Date': string;
   'Last Updated': string;

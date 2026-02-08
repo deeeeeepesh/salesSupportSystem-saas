@@ -93,16 +93,18 @@ function transformSheetRow(row: unknown[], index: number): Product | null {
       mrp: parseNumber(row[4]),
       mop: parseNumber(row[5]),
       finalPrice: parseNumber(row[6]), // Final Price column after MOP
-      selloutFromDate: String(row[7] || ''),
-      selloutToDate: String(row[8] || ''),
-      lastUpdated: String(row[9] || ''),
-      quickPitch: String(row[10] || ''),
-      bankOffers: String(row[11] || ''),
-      upgradeExchangeOffers: String(row[12] || ''),
-      storeOffersGifts: String(row[13] || ''),
-      weeklyFocus: parseBoolean(row[14]),
-      allModels: parseBoolean(row[15]),
-      newLaunch: parseBoolean(row[16]),
+      selloutMop: parseNumber(row[7]), // New Sellout MOP column
+      selloutFinal: parseNumber(row[8]), // New Sellout Final column
+      selloutFromDate: String(row[9] || ''),
+      selloutToDate: String(row[10] || ''),
+      lastUpdated: String(row[11] || ''),
+      quickPitch: String(row[12] || ''),
+      bankOffers: String(row[13] || ''),
+      upgradeExchangeOffers: String(row[14] || ''),
+      storeOffersGifts: String(row[15] || ''),
+      weeklyFocus: parseBoolean(row[16]),
+      allModels: parseBoolean(row[17]),
+      newLaunch: parseBoolean(row[18]),
       ram,
       rom,
     };
@@ -140,7 +142,7 @@ export async function fetchProductsFromSheets(): Promise<Product[]> {
 
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: `${SHEET_NAME}!A2:Q`, // Extended to include Final Price column
+        range: `${SHEET_NAME}!A2:S`, // Extended to include Sellout MOP and Sellout Final columns
       });
 
       const rows = response.data.values || [];

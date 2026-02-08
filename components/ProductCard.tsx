@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Product } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, isSelloutActive } from '@/lib/utils';
 import { SafeImage } from '@/components/SafeImage';
 
 interface ProductCardProps {
@@ -45,13 +45,38 @@ export default function ProductCard({ product }: ProductCardProps) {
             
             {/* Price */}
             <div className="space-y-1">
-              <p className="text-2xl font-bold text-primary">
-                {formatPrice(product.mop)}
-              </p>
-              {product.mrp && product.mrp !== product.mop && (
-                <p className="text-sm text-muted-foreground line-through">
-                  {formatPrice(product.mrp)}
-                </p>
+              {isSelloutActive(product.selloutFromDate, product.selloutToDate) && product.selloutMop !== null ? (
+                <>
+                  {/* Sellout MOP - big and bold */}
+                  <p className="text-2xl font-bold text-primary">
+                    {formatPrice(product.selloutMop)}
+                  </p>
+                  {/* Original MOP - smaller, not strikethrough */}
+                  {product.mop && (
+                    <p className="text-sm text-muted-foreground">
+                      {formatPrice(product.mop)}
+                    </p>
+                  )}
+                  {/* MRP - strikethrough */}
+                  {product.mrp && product.mrp !== product.selloutMop && (
+                    <p className="text-sm text-muted-foreground line-through">
+                      {formatPrice(product.mrp)}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Normal display: MOP big and bold */}
+                  <p className="text-2xl font-bold text-primary">
+                    {formatPrice(product.mop)}
+                  </p>
+                  {/* MRP strikethrough */}
+                  {product.mrp && product.mrp !== product.mop && (
+                    <p className="text-sm text-muted-foreground line-through">
+                      {formatPrice(product.mrp)}
+                    </p>
+                  )}
+                </>
               )}
             </div>
             
