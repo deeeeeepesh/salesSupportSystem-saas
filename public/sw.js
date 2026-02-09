@@ -82,7 +82,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request).catch(() => {
       // Return offline message for page requests
-      if (request.headers.get('accept')?.includes('text/html')) {
+      const acceptHeader = request.headers.get('accept');
+      if (acceptHeader && acceptHeader.includes('text/html')) {
         return new Response(
           `<!DOCTYPE html>
           <html lang="en">
@@ -112,6 +113,7 @@ self.addEventListener('fetch', (event) => {
               .icon {
                 font-size: 64px;
                 margin-bottom: 20px;
+                user-select: none;
               }
               h1 {
                 color: #1a1a2e;
@@ -141,11 +143,15 @@ self.addEventListener('fetch', (event) => {
               button:active {
                 transform: translateY(0);
               }
+              button:focus {
+                outline: 2px solid #667eea;
+                outline-offset: 2px;
+              }
             </style>
           </head>
           <body>
             <div class="container">
-              <div class="icon">📡</div>
+              <div class="icon" role="img" aria-label="No connection icon">📡</div>
               <h1>You're Offline</h1>
               <p>Please check your internet connection and try again. We need an active connection to show you the latest prices.</p>
               <button onclick="window.location.reload()">Try Again</button>
