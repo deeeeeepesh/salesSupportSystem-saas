@@ -1,19 +1,20 @@
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `sales-support-${CACHE_VERSION}`;
-const CACHE_URLS = [
-  '/catalogue',
+
+// Only cache essential PWA assets
+const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/icon-180.png',
 ];
 
-// Install event - cache essential files
+// Install event - cache only essential static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(CACHE_URLS).catch((error) => {
-        console.error('Failed to cache:', error);
+      return cache.addAll(STATIC_ASSETS).catch((error) => {
+        console.error('Failed to cache static assets:', error);
       });
     })
   );
@@ -30,13 +31,12 @@ self.addEventListener('activate', (event) => {
           .map((name) => caches.delete(name))
       );
     }).then(() => {
-      // Take control of all clients immediately
       return self.clients.claim();
     })
   );
 });
 
-// Fetch event - cache-first for static assets, network-first for API calls
+// Fetch event - network-only for pages, cache-first for static assets only
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -51,43 +51,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first for auth-related pages (login page and auth API)
-  if (url.pathname === '/' || url.pathname.startsWith('/api/auth/')) {
-    event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match(request);
-      })
-    );
-    return;
-  }
-
-  // Network-first for API calls
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Clone the response before caching
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cache if network fails
-          return caches.match(request).then((cachedResponse) => {
-            return cachedResponse || new Response('Offline', { status: 503 });
-          });
-        })
-    );
-    return;
-  }
-
-  // Cache-first for static assets
+  // Cache-first ONLY for static assets (icons, manifest, fonts, images)
   if (
-    url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|gif|woff|woff2|ttf|ico)$/) ||
-    url.pathname.startsWith('/catalogue') ||
-    url.pathname.startsWith('/product')
+    url.pathname.startsWith('/icons/') ||
+    url.pathname === '/manifest.json' ||
+    url.pathname.match(/\.(png|jpg|jpeg|svg|gif|ico|woff|woff2|ttf)$/)
   ) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
@@ -95,22 +63,103 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
         return fetch(request).then((response) => {
-          // Clone the response before caching
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(request, responseClone);
           });
           return response;
+        }).catch(() => {
+          // Return nothing for failed static asset requests
+          return new Response('', { status: 404 });
         });
       })
     );
     return;
   }
 
-  // Default: network-first for everything else
+  // Network-only for everything else (pages, API calls, JS, CSS)
+  // This ensures users ALWAYS get fresh data
   event.respondWith(
     fetch(request).catch(() => {
-      return caches.match(request);
+      // Return offline message for page requests
+      if (request.headers.get('accept')?.includes('text/html')) {
+        return new Response(
+          `<!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>You're Offline</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 20px;
+              }
+              .container {
+                background: white;
+                padding: 40px;
+                border-radius: 16px;
+                text-align: center;
+                max-width: 400px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              }
+              .icon {
+                font-size: 64px;
+                margin-bottom: 20px;
+              }
+              h1 {
+                color: #1a1a2e;
+                margin-bottom: 12px;
+                font-size: 24px;
+              }
+              p {
+                color: #666;
+                margin-bottom: 24px;
+                line-height: 1.6;
+              }
+              button {
+                background: #667eea;
+                color: white;
+                border: none;
+                padding: 14px 32px;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+              }
+              button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+              }
+              button:active {
+                transform: translateY(0);
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="icon">📡</div>
+              <h1>You're Offline</h1>
+              <p>Please check your internet connection and try again. We need an active connection to show you the latest prices.</p>
+              <button onclick="window.location.reload()">Try Again</button>
+            </div>
+          </body>
+          </html>`,
+          {
+            status: 503,
+            headers: { 'Content-Type': 'text/html' }
+          }
+        );
+      }
+      // Return error for non-HTML requests (API, JS, CSS)
+      return new Response('Offline', { status: 503 });
     })
   );
 });
