@@ -55,7 +55,8 @@ function ProductsContent() {
     onVersionMismatch: useCallback(() => {
       console.log('[Products] Version mismatch - refetching products');
       fetchProducts(1, true);
-    }, []), // Will add fetchProducts dependency after it's defined
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
   });
 
   useEffect(() => {

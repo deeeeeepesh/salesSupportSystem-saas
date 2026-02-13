@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { Product } from '@/types';
-import { fetchProductsFromSheets, clearProductsCache } from './google-sheets';
-import prisma from './db';
+import { fetchProductsFromSheets } from './google-sheets';
+import { prisma } from './db';
 import { publishMessage } from './redis';
 
 // Feature flag - defaults to true (enabled)

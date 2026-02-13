@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
-import { Product, FreshnessMetadata } from '@/types';
+import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,8 @@ export default function ProductDetailPage() {
     onVersionMismatch: useCallback(() => {
       console.log('[ProductDetail] Version mismatch - refetching product');
       fetchProduct();
-    }, []), // Will add fetchProduct dependency after it's defined
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
   });
 
   useEffect(() => {
