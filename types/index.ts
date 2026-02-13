@@ -41,6 +41,26 @@ export interface User {
   lastActiveAt?: Date | null;
 }
 
+// Price freshness types
+export type PriceFreshnessState = 
+  | 'VALID'              // Data confirmed fresh within maxValidDuration
+  | 'STALE_REFRESHING'   // Expired but background refresh in progress
+  | 'EXPIRED_BLOCKED'    // Hard expired — prices MUST NOT be shown
+  | 'OFFLINE_VALID'      // Offline but local data still within validity window
+  | 'OFFLINE_EXPIRED';   // Offline and data expired — hard block
+
+export interface FreshnessMetadata {
+  price_list_version: number;
+  server_generated_timestamp: number; // unix ms
+  max_valid_duration_ms: number;      // e.g. 300000 (5 min)
+}
+
+export interface VersionCheckResponse {
+  price_list_version: number;
+  server_timestamp: number;
+  max_valid_duration_ms: number;
+}
+
 // API response types
 export interface ProductsResponse {
   products: Product[];
@@ -48,6 +68,7 @@ export interface ProductsResponse {
   page: number;
   perPage: number;
   hasMore: boolean;
+  freshness: FreshnessMetadata;
 }
 
 export interface ProductFilters {
