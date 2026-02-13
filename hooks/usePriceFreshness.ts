@@ -223,13 +223,13 @@ export function usePriceFreshness(
     const snapshot = loadLocalSnapshot();
     if (snapshot && snapshot.freshness) {
       // Compute state based on stored freshness
-      const savedReceivedAt = snapshot.freshness.server_generated_timestamp;
-      receivedAtRef.current = savedReceivedAt;
+      const serverGeneratedAt = snapshot.freshness.server_generated_timestamp;
+      receivedAtRef.current = serverGeneratedAt;
       setFreshness(snapshot.freshness);
       
       const initialState = computeFreshnessState(
         snapshot.freshness,
-        savedReceivedAt,
+        serverGeneratedAt,
         navigator.onLine
       );
       setState(initialState);

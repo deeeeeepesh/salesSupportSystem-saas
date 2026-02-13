@@ -13,6 +13,9 @@ export function isPriceAuthorityEnabled(): boolean {
 const SYNC_INTERVAL_MS = parseInt(process.env.PRICE_SYNC_INTERVAL_MS || '120000', 10);
 const MAX_VALID_DURATION_MS = parseInt(process.env.PRICE_MAX_VALID_MS || '300000', 10);
 
+// Fallback duration when price authority is disabled or fails (2 minutes)
+export const FALLBACK_VALID_DURATION_MS = 120000;
+
 let syncIntervalHandle: NodeJS.Timeout | null = null;
 
 /**
@@ -38,21 +41,40 @@ export async function syncFromGoogleSheets(): Promise<{
   console.log('[PriceStore] Starting sync from Google Sheets...');
   
   try {
-    // Check and acquire sync lock
-    const meta = await prisma.priceListMeta.upsert({
-      where: { id: 'current' },
-      create: {
-        id: 'current',
-        version: 0,
-        lastSyncedAt: new Date(),
-        lastSheetHash: '',
-        syncInProgress: false,
-        maxValidDurationMs: MAX_VALID_DURATION_MS,
-      },
-      update: {},
+    // Use transaction with row-level lock to prevent race conditions
+    const lockAcquired = await prisma.$transaction(async (tx) => {
+      const meta = await tx.priceListMeta.findUnique({
+        where: { id: 'current' },
+      });
+
+      // Create meta record if it doesn't exist
+      if (!meta) {
+        await tx.priceListMeta.create({
+          data: {
+            id: 'current',
+            version: 0,
+            lastSyncedAt: new Date(),
+            lastSheetHash: '',
+            syncInProgress: true,
+            maxValidDurationMs: MAX_VALID_DURATION_MS,
+          },
+        });
+        return true;
+      }
+
+      // Check and acquire lock atomically
+      if (meta.syncInProgress) {
+        return false;
+      }
+
+      await tx.priceListMeta.update({
+        where: { id: 'current' },
+        data: { syncInProgress: true },
+      });
+      return true;
     });
 
-    if (meta.syncInProgress) {
+    if (!lockAcquired) {
       console.log('[PriceStore] Sync already in progress, skipping');
       return {
         success: false,
@@ -60,11 +82,14 @@ export async function syncFromGoogleSheets(): Promise<{
       };
     }
 
-    // Acquire lock
-    await prisma.priceListMeta.update({
+    // Get current meta state
+    const meta = await prisma.priceListMeta.findUnique({
       where: { id: 'current' },
-      data: { syncInProgress: true },
     });
+
+    if (!meta) {
+      throw new Error('Failed to acquire metadata');
+    }
 
     try {
       // Fetch from Google Sheets

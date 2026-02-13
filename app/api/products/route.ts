@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { fetchProductsFromSheets } from '@/lib/google-sheets';
-import { getProductsFromStore, isPriceAuthorityEnabled } from '@/lib/price-store';
+import { getProductsFromStore, isPriceAuthorityEnabled, FALLBACK_VALID_DURATION_MS } from '@/lib/price-store';
 import { FreshnessMetadata } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         freshness = {
           price_list_version: 0,
           server_generated_timestamp: Date.now(),
-          max_valid_duration_ms: 120000, // 2 minutes default
+          max_valid_duration_ms: FALLBACK_VALID_DURATION_MS,
         };
       }
     } else {
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       freshness = {
         price_list_version: 0,
         server_generated_timestamp: Date.now(),
-        max_valid_duration_ms: 120000, // 2 minutes default
+        max_valid_duration_ms: FALLBACK_VALID_DURATION_MS,
       };
     }
 
