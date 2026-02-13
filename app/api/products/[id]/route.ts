@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getProductById } from '@/lib/google-sheets';
+import { getProductsFromStore, isPriceAuthorityEnabled } from '@/lib/price-store';
+import { FreshnessMetadata } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,13 +18,43 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const product = await getProductById(params.id);
+    let product;
+    let freshness: FreshnessMetadata;
+
+    if (isPriceAuthorityEnabled()) {
+      try {
+        const storeData = await getProductsFromStore();
+        product = storeData.products.find(p => p.id === params.id);
+        freshness = {
+          price_list_version: storeData.version,
+          server_generated_timestamp: Date.now(),
+          max_valid_duration_ms: storeData.maxValidDurationMs,
+        };
+      } catch (error) {
+        console.error('[Product API] Failed to fetch from price store:', error);
+        // Fallback to Google Sheets
+        product = await getProductById(params.id);
+        freshness = {
+          price_list_version: 0,
+          server_generated_timestamp: Date.now(),
+          max_valid_duration_ms: 120000,
+        };
+      }
+    } else {
+      // Feature flag OFF - use existing Google Sheets fetching
+      product = await getProductById(params.id);
+      freshness = {
+        price_list_version: 0,
+        server_generated_timestamp: Date.now(),
+        max_valid_duration_ms: 120000,
+      };
+    }
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    return NextResponse.json({ ...product, freshness });
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json(
