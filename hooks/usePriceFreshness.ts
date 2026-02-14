@@ -224,6 +224,7 @@ export function usePriceFreshness(
   // Load snapshot on mount for fast start
   useEffect(() => {
     let isMounted = true; // Track component mount state
+    const abortController = new AbortController(); // For cancelling fetch on unmount
     
     const snapshot = loadLocalSnapshot();
     if (snapshot && snapshot.freshness) {
@@ -244,7 +245,9 @@ export function usePriceFreshness(
         // Immediately validate snapshot version against server
         const validateSnapshotVersion = async (snapshotFreshness: FreshnessMetadata) => {
           try {
-            const response = await fetch('/api/price-version');
+            const response = await fetch('/api/price-version', {
+              signal: abortController.signal,
+            });
             if (!response.ok) {
               console.error('[PriceFreshness] Snapshot validation failed:', response.status);
               // Network error - keep STALE_REFRESHING, heartbeat will retry
@@ -275,6 +278,10 @@ export function usePriceFreshness(
               }
             }
           } catch (error) {
+            // Ignore AbortError from unmount
+            if (error instanceof Error && error.name === 'AbortError') {
+              return;
+            }
             console.error('[PriceFreshness] Snapshot validation error:', error);
             // Network error - keep STALE_REFRESHING, heartbeat will retry
           }
@@ -294,6 +301,7 @@ export function usePriceFreshness(
     
     return () => {
       isMounted = false; // Prevent state updates after unmount
+      abortController.abort(); // Cancel in-flight fetch request
     };
   }, [loadLocalSnapshot, computeFreshnessState, onVersionMismatch, updateFreshness]);
 
