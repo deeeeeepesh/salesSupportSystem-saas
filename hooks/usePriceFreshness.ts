@@ -144,6 +144,9 @@ export function usePriceFreshness(
           server: serverVersion.price_list_version,
         });
 
+        // IMMEDIATELY gray out old prices before triggering refetch
+        setState('STALE_REFRESHING');
+
         // Trigger refetch callback
         if (onVersionMismatch) {
           onVersionMismatch();
@@ -220,6 +223,9 @@ export function usePriceFreshness(
 
   // Load snapshot on mount for fast start
   useEffect(() => {
+    let isMounted = true; // Track component mount state
+    const abortController = new AbortController(); // For cancelling fetch on unmount
+    
     const snapshot = loadLocalSnapshot();
     if (snapshot && snapshot.freshness) {
       // Compute state based on stored freshness
@@ -227,14 +233,77 @@ export function usePriceFreshness(
       receivedAtRef.current = serverGeneratedAt;
       setFreshness(snapshot.freshness);
       
-      const initialState = computeFreshnessState(
-        snapshot.freshness,
-        serverGeneratedAt,
-        navigator.onLine
-      );
-      setState(initialState);
+      const now = Date.now();
+      const age = now - serverGeneratedAt;
+      
+      // Check if snapshot is within validity window
+      if (age < snapshot.freshness.max_valid_duration_ms) {
+        // Snapshot is within validity - show as STALE_REFRESHING until validated
+        console.log('[PriceFreshness] Loading snapshot - validating version');
+        setState('STALE_REFRESHING');
+        
+        // Immediately validate snapshot version against server
+        const validateSnapshotVersion = async (snapshotFreshness: FreshnessMetadata) => {
+          try {
+            const response = await fetch('/api/price-version', {
+              signal: abortController.signal,
+            });
+            if (!response.ok) {
+              console.error('[PriceFreshness] Snapshot validation failed:', response.status);
+              // Network error - keep STALE_REFRESHING, heartbeat will retry
+              return;
+            }
+            
+            const serverVersion: VersionCheckResponse = await response.json();
+            
+            // Only update state if component is still mounted
+            if (!isMounted) return;
+            
+            if (serverVersion.price_list_version === snapshotFreshness.price_list_version) {
+              // Snapshot is still current! Update freshness with server timestamp and set VALID
+              console.log('[PriceFreshness] Snapshot validated - version matches');
+              updateFreshness({
+                price_list_version: serverVersion.price_list_version,
+                server_generated_timestamp: serverVersion.server_timestamp,
+                max_valid_duration_ms: serverVersion.max_valid_duration_ms,
+              });
+            } else {
+              // Version mismatch - trigger refetch (state stays STALE_REFRESHING)
+              console.log('[PriceFreshness] Snapshot validation - version mismatch detected:', {
+                local: snapshotFreshness.price_list_version,
+                server: serverVersion.price_list_version,
+              });
+              if (onVersionMismatch) {
+                onVersionMismatch();
+              }
+            }
+          } catch (error) {
+            // Ignore AbortError from unmount
+            if (error instanceof Error && error.name === 'AbortError') {
+              return;
+            }
+            console.error('[PriceFreshness] Snapshot validation error:', error);
+            // Network error - keep STALE_REFRESHING, heartbeat will retry
+          }
+        };
+        
+        validateSnapshotVersion(snapshot.freshness);
+      } else {
+        // Snapshot is expired - compute state normally (will be EXPIRED_BLOCKED or OFFLINE_EXPIRED)
+        const initialState = computeFreshnessState(
+          snapshot.freshness,
+          serverGeneratedAt,
+          navigator.onLine
+        );
+        setState(initialState);
+      }
     }
-  }, [loadLocalSnapshot, computeFreshnessState]);
+    
+    return () => {
+      isMounted = false; // Prevent state updates after unmount
+      abortController.abort(); // Cancel in-flight fetch request
+    };
+  }, [loadLocalSnapshot, computeFreshnessState, onVersionMismatch, updateFreshness]);
 
   // Cleanup timers on unmount
   useEffect(() => {
