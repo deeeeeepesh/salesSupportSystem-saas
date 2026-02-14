@@ -223,6 +223,8 @@ export function usePriceFreshness(
 
   // Load snapshot on mount for fast start
   useEffect(() => {
+    let isMounted = true; // Track component mount state
+    
     const snapshot = loadLocalSnapshot();
     if (snapshot && snapshot.freshness) {
       // Compute state based on stored freshness
@@ -250,6 +252,9 @@ export function usePriceFreshness(
             }
             
             const serverVersion: VersionCheckResponse = await response.json();
+            
+            // Only update state if component is still mounted
+            if (!isMounted) return;
             
             if (serverVersion.price_list_version === snapshotFreshness.price_list_version) {
               // Snapshot is still current! Update freshness with server timestamp and set VALID
@@ -286,6 +291,10 @@ export function usePriceFreshness(
         setState(initialState);
       }
     }
+    
+    return () => {
+      isMounted = false; // Prevent state updates after unmount
+    };
   }, [loadLocalSnapshot, computeFreshnessState, onVersionMismatch, updateFreshness]);
 
   // Cleanup timers on unmount
