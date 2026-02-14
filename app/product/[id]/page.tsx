@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { Product } from '@/types';
@@ -12,6 +12,8 @@ import { ArrowLeft, Tag, Smartphone } from 'lucide-react';
 import { SafeImage } from '@/components/SafeImage';
 import { FinalPrice } from '@/components/FinalPrice';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { usePriceFreshness } from '@/hooks/usePriceFreshness';
+import { PriceFreshnessGuard, FreshnessBadge } from '@/components/PriceFreshnessGuard';
 
 export default function ProductDetailPage() {
   const { data: session, status } = useSession();
@@ -23,6 +25,18 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { trackPageView } = useAnalytics();
+
+  // Price freshness hook
+  const {
+    state: freshnessState,
+    updateFreshness,
+  } = usePriceFreshness({
+    onVersionMismatch: useCallback(() => {
+      console.log('[ProductDetail] Version mismatch - refetching product');
+      fetchProduct();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -47,6 +61,13 @@ export default function ProductDetailPage() {
       }
       
       const data = await res.json();
+      
+      // Extract freshness metadata
+      if (data.freshness) {
+        updateFreshness(data.freshness);
+        delete data.freshness; // Remove from product object
+      }
+      
       setProduct(data);
       
       // Track page view
@@ -90,11 +111,14 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button variant="ghost" onClick={() => router.back()} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+        {/* Back Button and Freshness Badge */}
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <FreshnessBadge state={freshnessState} />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Product Image */}
@@ -141,60 +165,62 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Price */}
-            <div className="space-y-2">
-              {isSelloutActive(product.selloutFromDate, product.selloutToDate) && product.selloutMop !== null ? (
-                <>
-                  {/* Sellout MOP - big and bold */}
-                  <div className="text-5xl font-bold text-primary">
-                    {formatPrice(product.selloutMop)}
-                  </div>
-                  {/* Original MOP - smaller, not strikethrough */}
-                  {product.mop && (
-                    <div className="text-xl text-muted-foreground">
+            <PriceFreshnessGuard state={freshnessState}>
+              <div className="space-y-2">
+                {isSelloutActive(product.selloutFromDate, product.selloutToDate) && product.selloutMop !== null ? (
+                  <>
+                    {/* Sellout MOP - big and bold */}
+                    <div className="text-5xl font-bold text-primary">
+                      {formatPrice(product.selloutMop)}
+                    </div>
+                    {/* Original MOP - smaller, not strikethrough */}
+                    {product.mop && (
+                      <div className="text-xl text-muted-foreground">
+                        {formatPrice(product.mop)}
+                      </div>
+                    )}
+                    {/* MRP - strikethrough with savings badge */}
+                    {product.mrp && product.mrp !== product.selloutMop && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl text-muted-foreground line-through">
+                          {formatPrice(product.mrp)}
+                        </span>
+                        <Badge variant="outline" className="text-green-600">
+                          Save {formatPrice(product.mrp - (product.selloutMop || 0))}
+                        </Badge>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Normal display: MOP big and bold */}
+                    <div className="text-5xl font-bold text-primary">
                       {formatPrice(product.mop)}
                     </div>
-                  )}
-                  {/* MRP - strikethrough with savings badge */}
-                  {product.mrp && product.mrp !== product.selloutMop && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl text-muted-foreground line-through">
-                        {formatPrice(product.mrp)}
-                      </span>
-                      <Badge variant="outline" className="text-green-600">
-                        Save {formatPrice(product.mrp - (product.selloutMop || 0))}
-                      </Badge>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  {/* Normal display: MOP big and bold */}
-                  <div className="text-5xl font-bold text-primary">
-                    {formatPrice(product.mop)}
-                  </div>
-                  {/* MRP strikethrough with savings badge */}
-                  {product.mrp && product.mrp !== product.mop && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl text-muted-foreground line-through">
-                        {formatPrice(product.mrp)}
-                      </span>
-                      <Badge variant="outline" className="text-green-600">
-                        Save {formatPrice(product.mrp - (product.mop || 0))}
-                      </Badge>
-                    </div>
-                  )}
-                </>
-              )}
-              
-              {/* Final Price - Only visible to Store Manager and Admin */}
-              <FinalPrice 
-                finalPrice={product.finalPrice}
-                selloutFinal={product.selloutFinal}
-                selloutFromDate={product.selloutFromDate}
-                selloutToDate={product.selloutToDate}
-                userRole={session?.user?.role || ''}
-              />
-            </div>
+                    {/* MRP strikethrough with savings badge */}
+                    {product.mrp && product.mrp !== product.mop && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl text-muted-foreground line-through">
+                          {formatPrice(product.mrp)}
+                        </span>
+                        <Badge variant="outline" className="text-green-600">
+                          Save {formatPrice(product.mrp - (product.mop || 0))}
+                        </Badge>
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                {/* Final Price - Only visible to Store Manager and Admin */}
+                <FinalPrice 
+                  finalPrice={product.finalPrice}
+                  selloutFinal={product.selloutFinal}
+                  selloutFromDate={product.selloutFromDate}
+                  selloutToDate={product.selloutToDate}
+                  userRole={session?.user?.role || ''}
+                />
+              </div>
+            </PriceFreshnessGuard>
 
             {/* Specifications */}
             <Card>

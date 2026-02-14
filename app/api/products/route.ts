@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { fetchProductsFromSheets } from '@/lib/google-sheets';
+import { getProductsFromStore, isPriceAuthorityEnabled, FALLBACK_VALID_DURATION_MS } from '@/lib/price-store';
+import { FreshnessMetadata } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,8 +28,38 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const perPage = parseInt(searchParams.get('perPage') || '20');
 
-    // Fetch all products
-    let products = await fetchProductsFromSheets();
+    // Fetch products - use price authority if enabled, otherwise fall back to Google Sheets
+    let products;
+    let freshness: FreshnessMetadata;
+    
+    if (isPriceAuthorityEnabled()) {
+      try {
+        const storeData = await getProductsFromStore();
+        products = storeData.products;
+        freshness = {
+          price_list_version: storeData.version,
+          server_generated_timestamp: Date.now(),
+          max_valid_duration_ms: storeData.maxValidDurationMs,
+        };
+      } catch (error) {
+        console.error('[Products API] Failed to fetch from price store:', error);
+        // Fallback to Google Sheets if store fails
+        products = await fetchProductsFromSheets();
+        freshness = {
+          price_list_version: 0,
+          server_generated_timestamp: Date.now(),
+          max_valid_duration_ms: FALLBACK_VALID_DURATION_MS,
+        };
+      }
+    } else {
+      // Feature flag OFF - use existing Google Sheets fetching
+      products = await fetchProductsFromSheets();
+      freshness = {
+        price_list_version: 0,
+        server_generated_timestamp: Date.now(),
+        max_valid_duration_ms: FALLBACK_VALID_DURATION_MS,
+      };
+    }
 
     // Apply search filter
     if (search) {
@@ -101,6 +133,7 @@ export async function GET(request: NextRequest) {
       page,
       perPage,
       hasMore: endIndex < total,
+      freshness,
     });
   } catch (error) {
     console.error('Error in products API:', error);

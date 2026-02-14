@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { Product } from '@/types';
+import { Product, PriceFreshnessState } from '@/types';
 import ProductCard from './ProductCard';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -11,9 +11,10 @@ interface ProductSliderProps {
   title: string;
   products: Product[];
   viewAllLink?: string;
+  freshnessState?: PriceFreshnessState;
 }
 
-export default function ProductSlider({ title, products, viewAllLink }: ProductSliderProps) {
+export default function ProductSlider({ title, products, viewAllLink, freshnessState = 'VALID' }: ProductSliderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -67,7 +68,7 @@ export default function ProductSlider({ title, products, viewAllLink }: ProductS
         >
           {products.map((product) => (
             <div key={product.id} className="flex-none w-[280px]">
-              <ProductCard product={product} />
+              <ProductCard product={product} freshnessState={freshnessState} />
             </div>
           ))}
         </div>

@@ -16,9 +16,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Product } from '@/types';
+import { Product, ProductsResponse } from '@/types';
 import { LogOut, ShieldCheck } from 'lucide-react';
 import { useCacheRefresh } from '@/hooks/useCacheRefresh';
+import { usePriceFreshness } from '@/hooks/usePriceFreshness';
+import { FreshnessBadge } from '@/components/PriceFreshnessGuard';
 
 export default function CataloguePage() {
   const { data: session, status } = useSession();
@@ -28,6 +30,18 @@ export default function CataloguePage() {
   const [allModels, setAllModels] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Price freshness hook
+  const {
+    state: freshnessState,
+    updateFreshness,
+  } = usePriceFreshness({
+    onVersionMismatch: useCallback(() => {
+      console.log('[Catalogue] Version mismatch - refetching products');
+      fetchProducts();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -45,11 +59,16 @@ export default function CataloguePage() {
         fetch('/api/products?filter=allModels&perPage=10'),
       ]);
 
-      const [newArrivalsData, weeklyFocusData, allModelsData] = await Promise.all([
+      const [newArrivalsData, weeklyFocusData, allModelsData]: [ProductsResponse, ProductsResponse, ProductsResponse] = await Promise.all([
         newArrivalsRes.json(),
         weeklyFocusRes.json(),
         allModelsRes.json(),
       ]);
+
+      // Update freshness from first response (all should have same metadata)
+      if (newArrivalsData.freshness) {
+        updateFreshness(newArrivalsData.freshness);
+      }
 
       setNewArrivals(newArrivalsData.products || []);
       setWeeklyFocus(weeklyFocusData.products || []);
@@ -60,7 +79,7 @@ export default function CataloguePage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [updateFreshness]);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -114,37 +133,40 @@ export default function CataloguePage() {
             <div className="flex-1 max-w-2xl">
               <SearchBar placeholder="Search products..." onSubmit={handleSearch} />
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar>
-                    <AvatarFallback>{userInitials}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium">{session?.user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {session?.user?.role === 'ADMIN' && (
-                  <>
-                    <DropdownMenuItem onClick={() => router.push('/admin')}>
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                      Admin Panel
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <FreshnessBadge state={freshnessState} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar>
+                      <AvatarFallback>{userInitials}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{session?.user?.name}</p>
+                      <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {session?.user?.role === 'ADMIN' && (
+                    <>
+                      <DropdownMenuItem onClick={() => router.push('/admin')}>
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>
@@ -170,12 +192,21 @@ export default function CataloguePage() {
                 title="New Arrivals"
                 products={newArrivals}
                 viewAllLink="/products?filter=newLaunch"
+                freshnessState={freshnessState}
               />
 
               <ProductSlider
                 title="Weekly Focus"
                 products={weeklyFocus}
                 viewAllLink="/products?filter=weeklyFocus"
+                freshnessState={freshnessState}
+              />
+
+              <ProductSlider
+                title="All Models"
+                products={allModels}
+                viewAllLink="/products?filter=allModels"
+                freshnessState={freshnessState}
               />
 
               <ProductSlider

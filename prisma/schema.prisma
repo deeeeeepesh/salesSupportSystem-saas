@@ -36,3 +36,47 @@ enum Role {
   ADMIN
   STORE_MANAGER
 }
+
+// Price authority models for persistent price storage
+model PriceListMeta {
+  id                   String   @id @default("current")
+  version              Int      @default(0)
+  lastSyncedAt         DateTime @default(now())
+  lastSheetHash        String   @default("")
+  syncInProgress       Boolean  @default(false)
+  maxValidDurationMs   Int      @default(300000) // 5 minutes
+  updatedAt            DateTime @updatedAt
+
+  @@map("price_list_meta")
+}
+
+model CachedProduct {
+  id                    String   @id
+  brand                 String
+  model                 String
+  image                 String
+  variant               String
+  mrp                   Float?
+  mop                   Float?
+  finalPrice            Float?
+  selloutMop            Float?
+  selloutFinal          Float?
+  selloutFromDate       String?
+  selloutToDate         String?
+  lastUpdated           String?
+  quickPitch            String?
+  bankOffers            String?
+  upgradeExchangeOffers String?
+  storeOffersGifts      String?
+  weeklyFocus           Boolean  @default(false)
+  allModels             Boolean  @default(false)
+  newLaunch             Boolean  @default(false)
+  ram                   Int?
+  rom                   Int?
+  version               Int
+  createdAt             DateTime @default(now())
+
+  @@index([version])
+  @@index([brand])
+  @@map("cached_products")
+}

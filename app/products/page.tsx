@@ -6,10 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import SearchBar from '@/components/SearchBar';
 import FilterPanel from '@/components/FilterPanel';
 import ProductCard from '@/components/ProductCard';
-import { Product } from '@/types';
+import { Product, ProductsResponse } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useCacheRefresh } from '@/hooks/useCacheRefresh';
+import { usePriceFreshness } from '@/hooks/usePriceFreshness';
+import { FreshnessBadge } from '@/components/PriceFreshnessGuard';
 
 // Loading component
 function ProductsLoading() {
@@ -42,6 +44,20 @@ function ProductsContent() {
   const [selectedRom, setSelectedRom] = useState<number[]>([]);
   const [sortBy, setSortBy] = useState('latest');
   const [filter, setFilter] = useState(searchParams.get('filter') || '');
+
+  // Price freshness hook
+  const {
+    state: freshnessState,
+    updateFreshness,
+    saveProductsSnapshot,
+    loadLocalSnapshot,
+  } = usePriceFreshness({
+    onVersionMismatch: useCallback(() => {
+      console.log('[Products] Version mismatch - refetching products');
+      fetchProducts(1, true);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -84,10 +100,17 @@ function ProductsContent() {
       if (filter) params.append('filter', filter);
 
       const res = await fetch(`/api/products?${params}`);
-      const data = await res.json();
+      const data: ProductsResponse = await res.json();
+
+      // Update freshness metadata
+      if (data.freshness) {
+        updateFreshness(data.freshness);
+      }
 
       if (reset) {
         setProducts(data.products);
+        // Save snapshot for fast start
+        saveProductsSnapshot(data.products);
       } else {
         setProducts(prev => [...prev, ...data.products]);
       }
@@ -102,10 +125,18 @@ function ProductsContent() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [searchTerm, selectedBrands, minPrice, maxPrice, selectedRam, selectedRom, sortBy, filter]);
+  }, [searchTerm, selectedBrands, minPrice, maxPrice, selectedRam, selectedRom, sortBy, filter, updateFreshness, saveProductsSnapshot]);
 
   useEffect(() => {
     if (status === 'authenticated') {
+      // Try to load from local snapshot first for fast start
+      const snapshot = loadLocalSnapshot();
+      if (snapshot && snapshot.products.length > 0) {
+        setProducts(snapshot.products);
+        setLoading(false);
+      }
+      
+      // Then fetch fresh data
       fetchBrands();
       fetchProducts(1, true);
     }
@@ -165,6 +196,7 @@ function ProductsContent() {
                 onSubmit={setSearchTerm}
               />
             </div>
+            <FreshnessBadge state={freshnessState} />
           </div>
         </div>
       </header>
@@ -217,7 +249,7 @@ function ProductsContent() {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} freshnessState={freshnessState} />
                   ))}
                 </div>
 
