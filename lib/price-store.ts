@@ -94,7 +94,39 @@ export async function syncFromGoogleSheets(): Promise<{
     try {
       // Fetch from Google Sheets
       const products = await fetchProductsFromSheets();
-      const newHash = computeProductHash(products);
+
+      // Detect and log duplicate product IDs
+      const idOccurrences = new Map<string, Array<{ brand: string; model: string; variant: string }>>();
+      for (const p of products) {
+        const existing = idOccurrences.get(p.id) ?? [];
+        existing.push({ brand: p.brand, model: p.model, variant: p.variant });
+        idOccurrences.set(p.id, existing);
+      }
+
+      const duplicates = Array.from(idOccurrences.entries()).filter(([, occurrences]) => occurrences.length > 1);
+
+      if (duplicates.length > 0) {
+        console.warn(`[PriceStore] ⚠️ WARNING: Found ${duplicates.length} duplicate product ID(s) in Google Sheets data:`);
+        for (const [id, occurrences] of duplicates) {
+          console.warn(`[PriceStore]   Duplicate ID "${id}" (${occurrences.length} occurrences):`);
+          for (const occ of occurrences) {
+            console.warn(`[PriceStore]     - Brand: "${occ.brand}", Model: "${occ.model}", Variant: "${occ.variant}"`);
+          }
+        }
+      }
+
+      // Deduplicate: last occurrence wins (last row in sheet takes priority)
+      const uniqueProductsMap = new Map<string, Product>();
+      for (const p of products) {
+        uniqueProductsMap.set(p.id, p);
+      }
+      const uniqueProducts = Array.from(uniqueProductsMap.values());
+
+      if (uniqueProducts.length < products.length) {
+        console.warn(`[PriceStore] Deduplicated: ${products.length} products → ${uniqueProducts.length} unique products (${products.length - uniqueProducts.length} duplicates removed)`);
+      }
+
+      const newHash = computeProductHash(uniqueProducts);
 
       // Check if data has actually changed
       if (newHash === meta.lastSheetHash) {
@@ -109,7 +141,7 @@ export async function syncFromGoogleSheets(): Promise<{
         return {
           success: true,
           version: meta.version,
-          productsCount: products.length,
+          productsCount: uniqueProducts.length,
           message: 'No changes detected',
         };
       }
@@ -125,7 +157,7 @@ export async function syncFromGoogleSheets(): Promise<{
 
         // Insert new products
         await tx.cachedProduct.createMany({
-          data: products.map((p) => ({
+          data: uniqueProducts.map((p) => ({
             id: p.id,
             brand: p.brand,
             model: p.model,
@@ -165,7 +197,7 @@ export async function syncFromGoogleSheets(): Promise<{
         });
       });
 
-      console.log(`[PriceStore] Sync complete: version ${newVersion}, ${products.length} products`);
+      console.log(`[PriceStore] Sync complete: version ${newVersion}, ${uniqueProducts.length} products`);
 
       // Publish cache refresh event via Redis
       try {
@@ -182,7 +214,7 @@ export async function syncFromGoogleSheets(): Promise<{
       return {
         success: true,
         version: newVersion,
-        productsCount: products.length,
+        productsCount: uniqueProducts.length,
         message: 'Sync completed successfully',
       };
     } finally {
