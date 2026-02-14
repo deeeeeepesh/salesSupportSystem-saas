@@ -208,12 +208,6 @@ export default function CataloguePage() {
                 viewAllLink="/products?filter=allModels"
                 freshnessState={freshnessState}
               />
-
-              <ProductSlider
-                title="All Models"
-                products={allModels}
-                viewAllLink="/products?filter=allModels"
-              />
             </>
           )}
         </div>
