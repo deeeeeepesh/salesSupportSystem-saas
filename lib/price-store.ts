@@ -98,7 +98,7 @@ export async function syncFromGoogleSheets(): Promise<{
       // Detect and log duplicate product IDs
       const idOccurrences = new Map<string, Array<{ brand: string; model: string; variant: string }>>();
       for (const p of products) {
-        const existing = idOccurrences.get(p.id) || [];
+        const existing = idOccurrences.get(p.id) ?? [];
         existing.push({ brand: p.brand, model: p.model, variant: p.variant });
         idOccurrences.set(p.id, existing);
       }
@@ -116,7 +116,7 @@ export async function syncFromGoogleSheets(): Promise<{
       }
 
       // Deduplicate: last occurrence wins (last row in sheet takes priority)
-      const uniqueProductsMap = new Map<string, typeof products[0]>();
+      const uniqueProductsMap = new Map<string, Product>();
       for (const p of products) {
         uniqueProductsMap.set(p.id, p);
       }
