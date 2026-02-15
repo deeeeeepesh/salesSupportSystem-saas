@@ -57,6 +57,11 @@ function ProductsContent() {
       fetchProducts(1, true);
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
+    onExpired: useCallback(() => {
+      console.log('[Products] Prices expired - auto-refreshing');
+      fetchProducts(1, true);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
   });
 
   useEffect(() => {

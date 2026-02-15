@@ -5,6 +5,7 @@ import { PriceFreshnessState, FreshnessMetadata, VersionCheckResponse, Product }
 
 interface UsePriceFreshnessOptions {
   onVersionMismatch?: () => void;
+  onExpired?: () => void;
   checkInterval?: number; // Default 30s
 }
 
@@ -25,7 +26,7 @@ const DEFAULT_CHECK_INTERVAL = 30000; // 30 seconds
 export function usePriceFreshness(
   options: UsePriceFreshnessOptions = {}
 ): UsePriceFreshnessReturn {
-  const { onVersionMismatch, checkInterval = DEFAULT_CHECK_INTERVAL } = options;
+  const { onVersionMismatch, onExpired, checkInterval = DEFAULT_CHECK_INTERVAL } = options;
 
   const [state, setState] = useState<PriceFreshnessState>('VALID');
   const [freshness, setFreshness] = useState<FreshnessMetadata | null>(null);
@@ -34,6 +35,12 @@ export function usePriceFreshness(
   const expiryTimerRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const receivedAtRef = useRef<number>(Date.now());
+  const onExpiredRef = useRef(onExpired);
+
+  // Update ref when callback changes
+  useEffect(() => {
+    onExpiredRef.current = onExpired;
+  }, [onExpired]);
 
   // Check if prices are usable (not blocked)
   const isPriceUsable = state === 'VALID' || state === 'OFFLINE_VALID' || state === 'STALE_REFRESHING';
@@ -115,8 +122,11 @@ export function usePriceFreshness(
     // Set hard expiry timer
     const timeUntilExpiry = newFreshness.max_valid_duration_ms;
     expiryTimerRef.current = setTimeout(() => {
-      console.log('[PriceFreshness] Data expired - blocking prices');
+      console.log('[PriceFreshness] Data expired - auto-refreshing');
       setState('EXPIRED_BLOCKED');
+      if (onExpiredRef.current) {
+        onExpiredRef.current();
+      }
     }, timeUntilExpiry);
 
     // Update state immediately

@@ -41,6 +41,11 @@ export default function CataloguePage() {
       fetchProducts();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
+    onExpired: useCallback(() => {
+      console.log('[Catalogue] Prices expired - auto-refreshing');
+      fetchProducts();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
   });
 
   useEffect(() => {
