@@ -4,7 +4,6 @@ import { Product, PriceFreshnessState } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatPrice, isSelloutActive } from '@/lib/utils';
-import { SafeImage } from '@/components/SafeImage';
 import { PriceFreshnessGuard } from '@/components/PriceFreshnessGuard';
 
 interface ProductCardProps {
@@ -17,15 +16,6 @@ export default function ProductCard({ product, freshnessState = 'VALID' }: Produ
     <Link href={`/product/${product.id}`}>
       <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
         <CardContent className="p-4">
-          <div className="relative w-full h-48 mb-3">
-            <SafeImage
-              src={product.image}
-              alt={`${product.brand} ${product.model}`}
-              fill
-              className="object-contain"
-            />
-          </div>
-          
           <div className="space-y-2">
             {/* Badges */}
             <div className="flex gap-1 flex-wrap">
