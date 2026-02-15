@@ -34,18 +34,17 @@ export default function ProductSlider({ title, products, viewAllLink, freshnessS
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">{title}</h2>
         {viewAllLink && (
-          <Link href={viewAllLink}>
-            <Button 
-              className="px-6 py-3 text-base font-semibold rounded-lg border-0 shadow-sm hover:shadow-md transition-all"
-              style={{ 
-                backgroundColor: '#EEFF00', 
-                color: '#000000',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#D4E600'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#EEFF00'}
-            >
-              View All
-            </Button>
+          <Link 
+            href={viewAllLink}
+            className="px-6 py-3 text-base font-semibold rounded-lg shadow-sm hover:shadow-md transition-all inline-block"
+            style={{ 
+              backgroundColor: '#EEFF00', 
+              color: '#000000',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#D4E600'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#EEFF00'}
+          >
+            View All
           </Link>
         )}
       </div>

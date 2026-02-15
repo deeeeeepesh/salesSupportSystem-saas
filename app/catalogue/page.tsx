@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import SearchBar from '@/components/SearchBar';
@@ -106,6 +106,23 @@ export default function CataloguePage() {
     }, [status, fetchProducts])
   });
 
+  // Build suggestions from all products
+  const suggestions = useMemo(() => {
+    const allProducts = [...newArrivals, ...weeklyFocus, ...allModels];
+    const brandSet = new Set<string>();
+    const modelSet = new Set<string>();
+    
+    allProducts.forEach(p => {
+      brandSet.add(p.brand);
+      modelSet.add(`${p.brand} ${p.model}`);
+    });
+    
+    return [
+      ...Array.from(brandSet).map(b => ({ type: 'brand' as const, value: b })),
+      ...Array.from(modelSet).map(m => ({ type: 'model' as const, value: m })),
+    ];
+  }, [newArrivals, weeklyFocus, allModels]);
+
   const handleSearch = (value: string) => {
     if (value.trim()) {
       router.push(`/products?search=${encodeURIComponent(value)}`);
@@ -141,7 +158,7 @@ export default function CataloguePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 max-w-2xl">
-              <SearchBar placeholder="Search products..." onSubmit={handleSearch} />
+              <SearchBar placeholder="Search products..." onSubmit={handleSearch} suggestions={suggestions} />
             </div>
             <div className="flex items-center gap-2">
               <FreshnessBadge state={freshnessState} />
