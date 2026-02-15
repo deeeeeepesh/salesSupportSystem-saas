@@ -38,12 +38,12 @@ export default function CataloguePage() {
   } = usePriceFreshness({
     onVersionMismatch: useCallback(() => {
       console.log('[Catalogue] Version mismatch - refetching products');
-      fetchProducts();
+      fetchProducts(false); // Background refresh - don't show skeleton
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
     onExpired: useCallback(() => {
       console.log('[Catalogue] Prices expired - auto-refreshing');
-      fetchProducts();
+      fetchProducts(false); // Background refresh - don't show skeleton
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   });
@@ -54,9 +54,12 @@ export default function CataloguePage() {
     }
   }, [status, router]);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (isInitialLoad: boolean = true) => {
     try {
-      setLoading(true);
+      // Only show loading skeleton on initial page load, not on background refreshes
+      if (isInitialLoad) {
+        setLoading(true);
+      }
       
       const [newArrivalsRes, weeklyFocusRes, allModelsRes] = await Promise.all([
         fetch('/api/products?filter=newLaunch&perPage=10'),
@@ -82,13 +85,15 @@ export default function CataloguePage() {
       setError('Failed to load products');
       console.error(err);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   }, [updateFreshness]);
 
   useEffect(() => {
     if (status === 'authenticated') {
-      fetchProducts();
+      fetchProducts(true); // Initial load - show skeleton
     }
   }, [status, fetchProducts]);
 
@@ -96,7 +101,7 @@ export default function CataloguePage() {
   useCacheRefresh({ 
     onRefresh: useCallback(() => {
       if (status === 'authenticated') {
-        fetchProducts();
+        fetchProducts(false); // Background refresh - don't show skeleton
       }
     }, [status, fetchProducts])
   });

@@ -47,7 +47,7 @@ export default function ProductSliderSkeleton({ title, count = DEFAULT_SKELETON_
           {[...Array(count)].map((_, index) => (
             <div key={index} className="flex-none w-[280px]">
               {/* Skeleton Card */}
-              <div className="rounded-lg border bg-card shadow-sm overflow-hidden animate-pulse">
+              <div className="rounded-lg border bg-yellow-50 shadow-sm overflow-hidden animate-pulse">
                 {/* Skeleton Image */}
                 <div className="relative aspect-square bg-gray-200" />
                 
