@@ -36,6 +36,11 @@ export default function ProductDetailPage() {
       fetchProduct();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
+    onExpired: useCallback(() => {
+      console.log('[ProductDetail] Prices expired - auto-refreshing');
+      fetchProduct();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
   });
 
   useEffect(() => {
