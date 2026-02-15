@@ -7,6 +7,9 @@ import { FreshnessMetadata } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
+// Fuzzy matching threshold - allow up to 2 character differences
+const MAX_FUZZY_MATCH_DISTANCE = 2;
+
 // Simple Levenshtein distance function for fuzzy matching
 function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
@@ -122,7 +125,7 @@ export async function GET(request: NextRequest) {
               // Check for fuzzy match within the field
               const fieldWords = fieldLower.split(/\s+/);
               return fieldWords.some(fieldWord => 
-                levenshteinDistance(word, fieldWord) <= 2
+                levenshteinDistance(word, fieldWord) <= MAX_FUZZY_MATCH_DISTANCE
               );
             });
           }

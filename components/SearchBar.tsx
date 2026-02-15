@@ -26,10 +26,13 @@ export default function SearchBar({
   const [filteredSuggestions, setFilteredSuggestions] = useState<Array<{ type: 'brand' | 'model'; value: string }>>([]);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Delay before hiding suggestions to allow click events to register
+  const SUGGESTION_BLUR_DELAY = 200;
 
   // Debounced onChange handler
   useEffect(() => {
-    if (onChange && searchValue.length >= 1) {
+    if (onChange) {
       if (debounceTimeout.current) {
         clearTimeout(debounceTimeout.current);
       }
@@ -106,7 +109,7 @@ export default function SearchBar({
           }}
           onBlur={() => {
             // Delay hiding to allow click on suggestions
-            setTimeout(() => setShowSuggestions(false), 200);
+            setTimeout(() => setShowSuggestions(false), SUGGESTION_BLUR_DELAY);
           }}
           className="pl-10 pr-10"
         />
