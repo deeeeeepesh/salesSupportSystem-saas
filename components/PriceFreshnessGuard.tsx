@@ -32,13 +32,12 @@ export function PriceFreshnessGuard({ state, children }: PriceFreshnessGuardProp
   if (state === 'STALE_REFRESHING') {
     return (
       <div className="relative">
-        <div className="opacity-50 pointer-events-none">
+        <div className="opacity-70">
           {children}
         </div>
-        <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-700 font-medium">Updating prices...</p>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-center bg-white/80 rounded-lg px-3 py-1.5">
+            <p className="text-xs text-gray-500 font-medium">Updating prices...</p>
           </div>
         </div>
       </div>
