@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatPrice, formatDate, isSelloutActive } from '@/lib/utils';
 import { ArrowLeft, Tag, Smartphone } from 'lucide-react';
-import { SafeImage } from '@/components/SafeImage';
 import { FinalPrice } from '@/components/FinalPrice';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { usePriceFreshness } from '@/hooks/usePriceFreshness';
@@ -125,24 +124,7 @@ export default function ProductDetailPage() {
           <FreshnessBadge state={freshnessState} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Product Image */}
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="relative w-full aspect-square">
-                  <SafeImage
-                    src={product.image}
-                    alt={`${product.brand} ${product.model}`}
-                    fill
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
+        <div className="max-w-4xl mx-auto">
           {/* Product Details */}
           <div className="space-y-6">
             {/* Badges */}
