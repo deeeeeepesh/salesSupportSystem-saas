@@ -54,7 +54,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        {/* Note: user-scalable=no and maximum-scale=1 disable user zoom for PWA consistency. 
+            This may impact accessibility for users with visual impairments. 
+            The requirement specifically requests this to prevent auto-zoom on first launch. */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <meta name="theme-color" content="#e65100" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
