@@ -14,7 +14,7 @@ interface ProductCardProps {
 export default function ProductCard({ product, freshnessState = 'VALID' }: ProductCardProps) {
   return (
     <Link href={`/product/${product.id}`}>
-      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer bg-yellow-50">
         <CardContent className="p-4">
           <div className="space-y-2">
             {/* Badges */}
