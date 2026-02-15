@@ -37,6 +37,7 @@ function ProductsContent() {
   
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [brands, setBrands] = useState<string[]>([]);
+  const [models, setModels] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState<number | undefined>();
   const [maxPrice, setMaxPrice] = useState<number | undefined>();
@@ -75,7 +76,9 @@ function ProductsContent() {
       const res = await fetch('/api/products?perPage=1000');
       const data = await res.json();
       const uniqueBrands = Array.from(new Set(data.products.map((p: Product) => p.brand))).sort();
+      const uniqueModels = Array.from(new Set(data.products.map((p: Product) => p.model))).sort();
       setBrands(uniqueBrands as string[]);
+      setModels(uniqueModels as string[]);
     } catch (err) {
       console.error('Failed to fetch brands:', err);
     }
@@ -199,6 +202,11 @@ function ProductsContent() {
               <SearchBar 
                 placeholder="Search by brand, model, or variant..." 
                 onSubmit={setSearchTerm}
+                onChange={setSearchTerm}
+                suggestions={[
+                  ...brands.map(b => ({ type: 'brand' as const, value: b })),
+                  ...models.map(m => ({ type: 'model' as const, value: m })),
+                ]}
               />
             </div>
             <FreshnessBadge state={freshnessState} />

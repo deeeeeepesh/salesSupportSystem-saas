@@ -7,6 +7,35 @@ import { FreshnessMetadata } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
+// Simple Levenshtein distance function for fuzzy matching
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+  
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+  
+  return matrix[b.length][a.length];
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
@@ -61,14 +90,46 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Apply search filter
+    // Apply search filter with multi-word, additional fields, and fuzzy matching
     if (search) {
-      const searchLower = search.toLowerCase();
-      products = products.filter(p => 
-        p.brand.toLowerCase().includes(searchLower) ||
-        p.model.toLowerCase().includes(searchLower) ||
-        p.variant.toLowerCase().includes(searchLower)
-      );
+      const searchWords = search.toLowerCase().trim().split(/\s+/);
+      
+      products = products.filter(p => {
+        // For each word, check if it matches at least one field
+        return searchWords.every(word => {
+          const searchableFields = [
+            p.brand,
+            p.model,
+            p.variant,
+            p.quickPitch,
+            p.bankOffers,
+            p.upgradeExchangeOffers,
+            p.storeOffersGifts,
+          ];
+          
+          // Try exact match first
+          const exactMatch = searchableFields.some(field => 
+            field && field.toLowerCase().includes(word)
+          );
+          
+          if (exactMatch) return true;
+          
+          // Try fuzzy match for words longer than 4 characters
+          if (word.length > 4) {
+            return searchableFields.some(field => {
+              if (!field) return false;
+              const fieldLower = field.toLowerCase();
+              // Check for fuzzy match within the field
+              const fieldWords = fieldLower.split(/\s+/);
+              return fieldWords.some(fieldWord => 
+                levenshteinDistance(word, fieldWord) <= 2
+              );
+            });
+          }
+          
+          return false;
+        });
+      });
     }
 
     // Apply category filter
