@@ -64,6 +64,20 @@ export async function syncFromGoogleSheets(): Promise<{
 
       // Check and acquire lock atomically
       if (meta.syncInProgress) {
+        // Check if lock is stale (held for more than 5 minutes)
+        const lockAge = Date.now() - meta.lastSyncedAt.getTime();
+        const STALE_LOCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+        
+        if (lockAge > STALE_LOCK_TIMEOUT_MS) {
+          console.warn(`[PriceStore] Stale lock detected (held for ${Math.round(lockAge / 1000)}s) - force releasing`);
+          // Force acquire by overriding the stale lock
+          await tx.priceListMeta.update({
+            where: { id: 'current' },
+            data: { syncInProgress: true, lastSyncedAt: new Date() },
+          });
+          return true;
+        }
+        
         return false;
       }
 
@@ -82,16 +96,15 @@ export async function syncFromGoogleSheets(): Promise<{
       };
     }
 
-    // Get current meta state
-    const meta = await prisma.priceListMeta.findUnique({
-      where: { id: 'current' },
-    });
-
-    if (!meta) {
-      throw new Error('Failed to acquire metadata');
-    }
-
     try {
+      // Get current meta state
+      const meta = await prisma.priceListMeta.findUnique({
+        where: { id: 'current' },
+      });
+
+      if (!meta) {
+        throw new Error('Failed to acquire metadata');
+      }
       // Fetch from Google Sheets
       const products = await fetchProductsFromSheets();
 
@@ -219,16 +232,31 @@ export async function syncFromGoogleSheets(): Promise<{
       };
     } finally {
       // Release lock if still held (in case of error before transaction)
-      await prisma.priceListMeta.updateMany({
-        where: {
-          id: 'current',
-          syncInProgress: true,
-        },
-        data: { syncInProgress: false },
-      });
+      try {
+        await prisma.priceListMeta.updateMany({
+          where: {
+            id: 'current',
+            syncInProgress: true,
+          },
+          data: { syncInProgress: false },
+        });
+      } catch (releaseError) {
+        console.error('[PriceStore] CRITICAL: Failed to release sync lock:', releaseError);
+      }
     }
   } catch (error) {
     console.error('[PriceStore] Sync failed:', error);
+    
+    // Release lock on failure
+    try {
+      await prisma.priceListMeta.updateMany({
+        where: { id: 'current', syncInProgress: true },
+        data: { syncInProgress: false },
+      });
+    } catch (releaseError) {
+      console.error('[PriceStore] CRITICAL: Failed to release sync lock after error:', releaseError);
+    }
+    
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
