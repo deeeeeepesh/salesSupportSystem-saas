@@ -44,7 +44,9 @@ export async function GET(request: NextRequest) {
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return response;
     }
 
     // Get query parameters
@@ -191,7 +193,7 @@ export async function GET(request: NextRequest) {
     const endIndex = startIndex + perPage;
     const paginatedProducts = products.slice(startIndex, endIndex);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       products: paginatedProducts,
       total,
       page,
@@ -199,11 +201,15 @@ export async function GET(request: NextRequest) {
       hasMore: endIndex < total,
       freshness,
     });
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   } catch (error) {
     console.error('Error in products API:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   }
 }

@@ -11,24 +11,30 @@ export async function POST() {
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return response;
     }
 
     // Check if user is ADMIN
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Forbidden - ADMIN role required' },
         { status: 403 }
       );
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return response;
     }
 
     if (!isPriceAuthorityEnabled()) {
       // Feature flag OFF - just clear the Google Sheets cache
       clearProductsCache();
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         message: 'Google Sheets cache cleared (legacy mode)',
       });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return response;
     }
 
     // Clear in-memory cache first
@@ -37,17 +43,21 @@ export async function POST() {
     // Trigger sync from Google Sheets to PostgreSQL
     const result = await syncFromGoogleSheets();
 
-    return NextResponse.json(result, {
+    const response = NextResponse.json(result, {
       status: result.success ? 200 : 500,
     });
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   } catch (error) {
     console.error('[PriceSync API] Error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   }
 }

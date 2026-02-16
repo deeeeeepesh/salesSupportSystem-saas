@@ -12,7 +12,9 @@ export async function POST() {
     
     // Only admins can refresh cache
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return response;
     }
 
     const beforeStatus = getCacheStatus();
@@ -27,17 +29,21 @@ export async function POST() {
       console.warn('Cache cleared locally but clients may not have been notified');
     }
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: 'Cache cleared successfully',
       before: beforeStatus,
       after: getCacheStatus(),
     });
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   } catch (error) {
     console.error('Error clearing cache:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to clear cache' },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   }
 }
 
@@ -46,16 +52,22 @@ export async function GET() {
     const session = await getServerSession(authOptions);
     
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return response;
     }
 
     const status = getCacheStatus();
-    return NextResponse.json(status);
+    const response = NextResponse.json(status);
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   } catch (error) {
     console.error('Error getting cache status:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to get cache status' },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   }
 }

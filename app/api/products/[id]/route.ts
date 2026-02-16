@@ -15,7 +15,9 @@ export async function GET(
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return response;
     }
 
     let product;
@@ -51,15 +53,21 @@ export async function GET(
     }
 
     if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      const response = NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return response;
     }
 
-    return NextResponse.json({ ...product, freshness });
+    const response = NextResponse.json({ ...product, freshness });
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   } catch (error) {
     console.error('Error fetching product:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Failed to fetch product' },
       { status: 500 }
     );
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   }
 }
