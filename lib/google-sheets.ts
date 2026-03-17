@@ -21,7 +21,7 @@ function getGoogleSheetsClient() {
       credentials,
       scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
     });
-    
+
     return google.sheets({ version: 'v4', auth });
   } catch (error) {
     console.error('Failed to initialize Google Sheets client:', error);
@@ -59,13 +59,13 @@ function generateProductId(brand: string, model: string, variant: string): strin
   // Without this, slugify with strict:true would strip the + and both would have the same ID
   const sanitize = (str: string): string => {
     return str
-      .replace(/\+/g, '-plus')    // Pro+ → Pro-plus
-      .replace(/&/g, '-and')      // A & B → A-and-B
-      .replace(/@/g, '-at')       // X@Y → X-at-Y
-      .replace(/#/g, '-hash')     // Model#1 → Model-hash-1
-      .replace(/%/g, '-percent'); // 5% → 5-percent
+      .replace(/\+/g, '-plus')    // Pro+ -> Pro-plus
+      .replace(/&/g, '-and')      // A & B -> A-and-B
+      .replace(/@/g, '-at')       // X@Y -> X-at-Y
+      .replace(/#/g, '-hash')     // Model#1 -> Model-hash-1
+      .replace(/%/g, '-percent'); // 5% -> 5-percent
   };
-  
+
   const combined = `${sanitize(brand)}_${sanitize(model)}_${sanitize(variant)}`;
   return slugify(combined, { lower: true, strict: true });
 }
@@ -78,12 +78,12 @@ function transformSheetRow(row: unknown[], index: number): Product | null {
     const brand = String(row[0] || '');
     const model = String(row[1] || '');
     const variant = String(row[3] || '');
-    
+
     // Skip rows without essential data
     if (!brand || !model) return null;
-    
+
     const { ram, rom } = parseVariant(variant);
-    
+
     return {
       id: generateProductId(brand, model, variant),
       brand: brand.trim(),
@@ -116,8 +116,10 @@ function transformSheetRow(row: unknown[], index: number): Product | null {
 
 /**
  * Fetch products from Google Sheets
+ * Accepts an optional googleSheetId for per-tenant sheets;
+ * falls back to GOOGLE_SHEETS_SPREADSHEET_ID env var.
  */
-export async function fetchProductsFromSheets(): Promise<Product[]> {
+export async function fetchProductsFromSheets(googleSheetId?: string): Promise<Product[]> {
   // Return cached data if still valid
   if (productsCache && cacheTimestamp && Date.now() - cacheTimestamp < CACHE_DURATION) {
     console.log('Returning cached products');
@@ -134,10 +136,11 @@ export async function fetchProductsFromSheets(): Promise<Product[]> {
   inFlightRequest = (async () => {
     try {
       const sheets = getGoogleSheetsClient();
-      const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+      // Use provided googleSheetId (tenant-specific), or fall back to env var
+      const spreadsheetId = googleSheetId || process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 
       if (!spreadsheetId) {
-        throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID not configured');
+        throw new Error('Google Sheets spreadsheet ID not configured');
       }
 
       const response = await sheets.spreadsheets.values.get({
@@ -160,13 +163,13 @@ export async function fetchProductsFromSheets(): Promise<Product[]> {
       return products;
     } catch (error) {
       console.error('Error fetching from Google Sheets:', error);
-      
+
       // Return cached data if available, even if expired
       if (productsCache) {
         console.log('Returning expired cache due to error');
         return productsCache;
       }
-      
+
       throw error;
     } finally {
       // Clear in-flight request when done

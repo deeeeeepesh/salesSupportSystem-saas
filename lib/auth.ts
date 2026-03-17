@@ -4,24 +4,47 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './db';
 import { generateSessionId, updateUserSession } from './session';
 
-// Interval for refreshing user role from database (in milliseconds)
-const ROLE_REFRESH_INTERVAL = 30 * 1000; // 30 seconds
+const ROLE_REFRESH_INTERVAL = 30 * 1000;
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+        tenantSlug: { label: 'Tenant', type: 'text' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password required');
         }
 
+        // Get tenant slug from credentials (injected from login form via hidden field)
+        const tenantSlug = credentials.tenantSlug as string | undefined;
+        if (!tenantSlug) {
+          throw new Error('Tenant context missing');
+        }
+
+        const tenant = await prisma.tenant.findUnique({
+          where: { slug: tenantSlug },
+          select: { id: true, status: true },
+        });
+
+        if (!tenant) {
+          throw new Error('Store not found');
+        }
+
+        if (tenant.status === 'SUSPENDED') {
+          throw new Error('Store subscription has been suspended. Please contact support.');
+        }
+
+        if (tenant.status === 'CANCELLED') {
+          throw new Error('Store subscription has been cancelled.');
+        }
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email_tenantId: { email: credentials.email, tenantId: tenant.id } },
         });
 
         if (!user) {
@@ -32,11 +55,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Account is disabled');
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
         if (!isPasswordValid) {
           throw new Error('Invalid email or password');
         }
@@ -46,61 +65,57 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          tenantId: tenant.id,
+          tenantSlug,
         };
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // Initial sign in - set user data from authorize callback
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.tenantId = (user as any).tenantId;
+        token.tenantSlug = (user as any).tenantSlug;
         token.roleLastFetchedAt = Date.now();
-        
-        // Generate and store new session ID on sign in
+
         const sessionId = generateSessionId();
         token.sessionId = sessionId;
-        
-        // Update user's active session in database
         await updateUserSession(user.id, sessionId);
       } else {
-        // Subsequent requests - refresh role from database periodically
         const now = Date.now();
-        const lastFetched = token.roleLastFetchedAt as number || 0;
-        
-        // Only refresh if enough time has passed since last fetch
+        const lastFetched = (token.roleLastFetchedAt as number) || 0;
+
         if (now - lastFetched > ROLE_REFRESH_INTERVAL) {
           try {
             const dbUser = await prisma.user.findUnique({
               where: { id: token.id as string },
-              select: {
-                id: true,
-                role: true,
-                isActive: true,
-              },
+              select: { id: true, role: true, isActive: true, tenantId: true },
             });
-            
-            // If user doesn't exist or is deactivated, invalidate session
+
             if (!dbUser || !dbUser.isActive) {
-              // Clear token to force re-authentication
-              // NextAuth will handle this as an invalid session
               throw new Error('Session invalidated: user not found or deactivated');
             }
-            
-            // Update role if it has changed
+
+            // Also check tenant status
+            const tenant = await prisma.tenant.findUnique({
+              where: { id: dbUser.tenantId },
+              select: { status: true },
+            });
+
+            if (!tenant || tenant.status === 'SUSPENDED' || tenant.status === 'CANCELLED') {
+              throw new Error('Session invalidated: store suspended');
+            }
+
             if (token.role !== dbUser.role) {
-              console.log(`Role changed for user ${token.id}: ${token.role} -> ${dbUser.role}`);
               token.role = dbUser.role;
             }
             token.roleLastFetchedAt = now;
           } catch (error) {
-            // If it's a session invalidation error, re-throw it
             if (error instanceof Error && error.message.includes('Session invalidated')) {
               throw error;
             }
-            // For other errors (e.g., database connection issues),
-            // log and keep existing token to avoid disrupting user session
             console.error('Error refreshing user role:', error);
           }
         }
@@ -112,16 +127,18 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.sessionId = token.sessionId as string;
+        session.user.tenantId = token.tenantId as string;
+        session.user.tenantSlug = token.tenantSlug as string;
       }
       return session;
-    }
+    },
   },
   pages: {
     signIn: '/',
   },
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

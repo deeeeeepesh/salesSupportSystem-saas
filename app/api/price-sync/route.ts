@@ -26,6 +26,8 @@ export async function POST() {
       return response;
     }
 
+    const tenantId = session.user.tenantId;
+
     if (!isPriceAuthorityEnabled()) {
       // Feature flag OFF - just clear the Google Sheets cache
       clearProductsCache();
@@ -40,8 +42,8 @@ export async function POST() {
     // Clear in-memory cache first
     clearProductsCache();
 
-    // Trigger sync from Google Sheets to PostgreSQL
-    const result = await syncFromGoogleSheets();
+    // Trigger sync from Google Sheets to PostgreSQL for this tenant
+    const result = await syncFromGoogleSheets(tenantId);
 
     const response = NextResponse.json(result, {
       status: result.success ? 200 : 500,

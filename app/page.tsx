@@ -8,6 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+function getTenantSlug(): string {
+  if (typeof window === 'undefined') return '';
+  const hostname = window.location.hostname;
+  // For local dev support via ?tenant= query param
+  const params = new URLSearchParams(window.location.search);
+  const tenantParam = params.get('tenant');
+  if (tenantParam) return tenantParam;
+  // Extract subdomain from hostname
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'salessupportapp.dedasystems.com';
+  if (hostname.endsWith(`.${rootDomain}`)) {
+    return hostname.replace(`.${rootDomain}`, '');
+  }
+  // Fallback: use first part of hostname (handles storename.localhost etc.)
+  const parts = hostname.split('.');
+  if (parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'localhost') {
+    return parts[0];
+  }
+  return '';
+}
+
 export default function LoginPage() {
   const { status } = useSession();
   const router = useRouter();
@@ -15,6 +35,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tenantSlug, setTenantSlug] = useState('');
+
+  useEffect(() => {
+    setTenantSlug(getTenantSlug());
+  }, []);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -27,10 +52,17 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
+    if (!tenantSlug) {
+      setError('Unable to determine store. Please access via your store URL.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await signIn('credentials', {
         email,
         password,
+        tenantSlug,
         redirect: false,
       });
 
@@ -58,7 +90,9 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Sales Support System</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access the catalogue
+            {tenantSlug
+              ? `Sign in to ${tenantSlug}`
+              : 'Enter your credentials to access the catalogue'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -92,9 +126,14 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || !tenantSlug}>
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
+            {!tenantSlug && (
+              <p className="text-xs text-center text-gray-500">
+                Please access this page via your store's URL (e.g. storename.salessupportapp.dedasystems.com)
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>

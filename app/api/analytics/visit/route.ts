@@ -8,12 +8,14 @@ export const dynamic = 'force-dynamic';
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Increment total visits and update last active time
+    const tenantId = session.user.tenantId;
+
+    // Increment total visits and update last active time, scoped to tenant
     await prisma.user.update({
       where: { id: session.user.id },
       data: {

@@ -29,29 +29,29 @@ function computeProductHash(products: Product[]): string {
 }
 
 /**
- * Sync products from Google Sheets to PostgreSQL
+ * Sync products from Google Sheets to PostgreSQL for a specific tenant
  * This is the single source of truth for price updates
  */
-export async function syncFromGoogleSheets(): Promise<{
+export async function syncFromGoogleSheets(tenantId: string): Promise<{
   success: boolean;
   version?: number;
   productsCount?: number;
   message: string;
 }> {
-  console.log('[PriceStore] Starting sync from Google Sheets...');
-  
+  console.log(`[PriceStore] Starting sync from Google Sheets for tenant ${tenantId}...`);
+
   try {
     // Use transaction with row-level lock to prevent race conditions
     const lockAcquired = await prisma.$transaction(async (tx) => {
-      const meta = await tx.priceListMeta.findUnique({
-        where: { id: 'current' },
+      const meta = await tx.priceListMeta.findFirst({
+        where: { tenantId },
       });
 
       // Create meta record if it doesn't exist
       if (!meta) {
         await tx.priceListMeta.create({
           data: {
-            id: 'current',
+            tenantId,
             version: 0,
             lastSyncedAt: new Date(),
             lastSheetHash: '',
@@ -67,22 +67,22 @@ export async function syncFromGoogleSheets(): Promise<{
         // Check if lock is stale (held for more than 5 minutes)
         const lockAge = Date.now() - meta.lastSyncedAt.getTime();
         const STALE_LOCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-        
+
         if (lockAge > STALE_LOCK_TIMEOUT_MS) {
           console.warn(`[PriceStore] Stale lock detected (held for ${Math.round(lockAge / 1000)}s) - force releasing`);
           // Force acquire by overriding the stale lock
           await tx.priceListMeta.update({
-            where: { id: 'current' },
+            where: { id: meta.id },
             data: { syncInProgress: true, lastSyncedAt: new Date() },
           });
           return true;
         }
-        
+
         return false;
       }
 
       await tx.priceListMeta.update({
-        where: { id: 'current' },
+        where: { id: meta.id },
         data: { syncInProgress: true },
       });
       return true;
@@ -98,15 +98,22 @@ export async function syncFromGoogleSheets(): Promise<{
 
     try {
       // Get current meta state
-      const meta = await prisma.priceListMeta.findUnique({
-        where: { id: 'current' },
+      const meta = await prisma.priceListMeta.findFirst({
+        where: { tenantId },
       });
 
       if (!meta) {
         throw new Error('Failed to acquire metadata');
       }
-      // Fetch from Google Sheets
-      const products = await fetchProductsFromSheets();
+
+      // Get tenant's Google Sheet ID
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { googleSheetId: true },
+      });
+
+      // Fetch from Google Sheets (use tenant's sheet if available)
+      const products = await fetchProductsFromSheets(tenant?.googleSheetId || undefined);
 
       // Detect and log duplicate product IDs
       const idOccurrences = new Map<string, Array<{ brand: string; model: string; variant: string }>>();
@@ -119,7 +126,7 @@ export async function syncFromGoogleSheets(): Promise<{
       const duplicates = Array.from(idOccurrences.entries()).filter(([, occurrences]) => occurrences.length > 1);
 
       if (duplicates.length > 0) {
-        console.warn(`[PriceStore] ⚠️ WARNING: Found ${duplicates.length} duplicate product ID(s) in Google Sheets data:`);
+        console.warn(`[PriceStore] WARNING: Found ${duplicates.length} duplicate product ID(s) in Google Sheets data:`);
         for (const [id, occurrences] of duplicates) {
           console.warn(`[PriceStore]   Duplicate ID "${id}" (${occurrences.length} occurrences):`);
           for (const occ of occurrences) {
@@ -136,7 +143,7 @@ export async function syncFromGoogleSheets(): Promise<{
       const uniqueProducts = Array.from(uniqueProductsMap.values());
 
       if (uniqueProducts.length < products.length) {
-        console.warn(`[PriceStore] Deduplicated: ${products.length} products → ${uniqueProducts.length} unique products (${products.length - uniqueProducts.length} duplicates removed)`);
+        console.warn(`[PriceStore] Deduplicated: ${products.length} products -> ${uniqueProducts.length} unique products (${products.length - uniqueProducts.length} duplicates removed)`);
       }
 
       const newHash = computeProductHash(uniqueProducts);
@@ -145,7 +152,7 @@ export async function syncFromGoogleSheets(): Promise<{
       if (newHash === meta.lastSheetHash) {
         console.log('[PriceStore] No changes detected in product data');
         await prisma.priceListMeta.update({
-          where: { id: 'current' },
+          where: { id: meta.id },
           data: {
             syncInProgress: false,
             lastSyncedAt: new Date(),
@@ -161,17 +168,18 @@ export async function syncFromGoogleSheets(): Promise<{
 
       // Data has changed - perform atomic update
       const newVersion = meta.version + 1;
-      
+
       await prisma.$transaction(async (tx) => {
-        // Delete old products
+        // Delete old products for this tenant at old version
         await tx.cachedProduct.deleteMany({
-          where: { version: meta.version },
+          where: { tenantId, version: meta.version },
         });
 
-        // Insert new products
+        // Insert new products scoped to tenant
         await tx.cachedProduct.createMany({
           data: uniqueProducts.map((p) => ({
-            id: p.id,
+            id: `${tenantId}:${p.id}`,
+            tenantId,
             brand: p.brand,
             model: p.model,
             image: p.image,
@@ -199,7 +207,7 @@ export async function syncFromGoogleSheets(): Promise<{
 
         // Update metadata
         await tx.priceListMeta.update({
-          where: { id: 'current' },
+          where: { id: meta.id },
           data: {
             version: newVersion,
             lastSyncedAt: new Date(),
@@ -210,11 +218,11 @@ export async function syncFromGoogleSheets(): Promise<{
         });
       });
 
-      console.log(`[PriceStore] Sync complete: version ${newVersion}, ${uniqueProducts.length} products`);
+      console.log(`[PriceStore] Sync complete for tenant ${tenantId}: version ${newVersion}, ${uniqueProducts.length} products`);
 
-      // Publish cache refresh event via Redis
+      // Publish tenant-scoped cache refresh event via Redis
       try {
-        await publishMessage('cache:refresh', JSON.stringify({
+        await publishMessage(`cache:refresh:${tenantId}`, JSON.stringify({
           type: 'price_update',
           version: newVersion,
           timestamp: Date.now(),
@@ -233,30 +241,36 @@ export async function syncFromGoogleSheets(): Promise<{
     } finally {
       // Release lock if still held (in case of error before transaction)
       try {
-        await prisma.priceListMeta.updateMany({
-          where: {
-            id: 'current',
-            syncInProgress: true,
-          },
-          data: { syncInProgress: false },
-        });
+        const meta = await prisma.priceListMeta.findFirst({ where: { tenantId } });
+        if (meta) {
+          await prisma.priceListMeta.updateMany({
+            where: {
+              id: meta.id,
+              syncInProgress: true,
+            },
+            data: { syncInProgress: false },
+          });
+        }
       } catch (releaseError) {
         console.error('[PriceStore] CRITICAL: Failed to release sync lock:', releaseError);
       }
     }
   } catch (error) {
     console.error('[PriceStore] Sync failed:', error);
-    
+
     // Release lock on failure
     try {
-      await prisma.priceListMeta.updateMany({
-        where: { id: 'current', syncInProgress: true },
-        data: { syncInProgress: false },
-      });
+      const meta = await prisma.priceListMeta.findFirst({ where: { tenantId } });
+      if (meta) {
+        await prisma.priceListMeta.updateMany({
+          where: { id: meta.id, syncInProgress: true },
+          data: { syncInProgress: false },
+        });
+      }
     } catch (releaseError) {
       console.error('[PriceStore] CRITICAL: Failed to release sync lock after error:', releaseError);
     }
-    
+
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -265,29 +279,29 @@ export async function syncFromGoogleSheets(): Promise<{
 }
 
 /**
- * Get products from PostgreSQL store (never touches Google Sheets)
+ * Get products from PostgreSQL store for a specific tenant (never touches Google Sheets)
  */
-export async function getProductsFromStore(): Promise<{
+export async function getProductsFromStore(tenantId: string): Promise<{
   products: Product[];
   version: number;
   syncedAt: Date;
   maxValidDurationMs: number;
 }> {
-  const meta = await prisma.priceListMeta.findUnique({
-    where: { id: 'current' },
+  const meta = await prisma.priceListMeta.findFirst({
+    where: { tenantId },
   });
 
   if (!meta) {
-    throw new Error('Price list not initialized - run sync first');
+    throw new Error('Price list not initialized for this store - run sync first');
   }
 
   const cachedProducts = await prisma.cachedProduct.findMany({
-    where: { version: meta.version },
+    where: { tenantId, version: meta.version },
     orderBy: { brand: 'asc' },
   });
 
   const products: Product[] = cachedProducts.map((cp) => ({
-    id: cp.id,
+    id: cp.id.replace(`${tenantId}:`, ''), // strip tenant prefix for client
     brand: cp.brand,
     model: cp.model,
     image: cp.image,
@@ -320,19 +334,19 @@ export async function getProductsFromStore(): Promise<{
 }
 
 /**
- * Get version info only (lightweight ~100 bytes)
+ * Get version info only for a specific tenant (lightweight ~100 bytes)
  */
-export async function getVersionInfo(): Promise<{
+export async function getVersionInfo(tenantId: string): Promise<{
   version: number;
   syncedAt: Date;
   maxValidDurationMs: number;
 }> {
-  const meta = await prisma.priceListMeta.findUnique({
-    where: { id: 'current' },
+  const meta = await prisma.priceListMeta.findFirst({
+    where: { tenantId },
   });
 
   if (!meta) {
-    throw new Error('Price list not initialized');
+    throw new Error('Price list not initialized for this store');
   }
 
   return {
@@ -343,24 +357,24 @@ export async function getVersionInfo(): Promise<{
 }
 
 /**
- * Start background sync interval
+ * Start background sync interval for a specific tenant
  */
-export function startBackgroundSync(): void {
+export function startBackgroundSync(tenantId: string): void {
   if (syncIntervalHandle) {
     console.log('[PriceStore] Background sync already running');
     return;
   }
 
-  console.log(`[PriceStore] Starting background sync (interval: ${SYNC_INTERVAL_MS}ms)`);
+  console.log(`[PriceStore] Starting background sync for tenant ${tenantId} (interval: ${SYNC_INTERVAL_MS}ms)`);
 
   // Perform initial sync
-  syncFromGoogleSheets().catch((err) => {
+  syncFromGoogleSheets(tenantId).catch((err) => {
     console.error('[PriceStore] Initial sync failed:', err);
   });
 
   // Set up interval
   syncIntervalHandle = setInterval(() => {
-    syncFromGoogleSheets().catch((err) => {
+    syncFromGoogleSheets(tenantId).catch((err) => {
       console.error('[PriceStore] Scheduled sync failed:', err);
     });
   }, SYNC_INTERVAL_MS);

@@ -15,6 +15,8 @@ export async function GET() {
       return response;
     }
 
+    const tenantId = session.user.tenantId;
+
     if (!isPriceAuthorityEnabled()) {
       // Feature flag OFF - return default version info
       const response = NextResponse.json({
@@ -26,7 +28,7 @@ export async function GET() {
       return response;
     }
 
-    const versionInfo = await getVersionInfo();
+    const versionInfo = await getVersionInfo(tenantId);
 
     const response = NextResponse.json({
       price_list_version: versionInfo.version,

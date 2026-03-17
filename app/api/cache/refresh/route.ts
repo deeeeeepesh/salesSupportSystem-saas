@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     // Only admins can refresh cache
     if (!session || session.user.role !== 'ADMIN') {
       const response = NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
@@ -17,18 +17,20 @@ export async function POST() {
       return response;
     }
 
+    const tenantId = session.user.tenantId;
+
     const beforeStatus = getCacheStatus();
     clearProductsCache();
-    
-    // Broadcast cache refresh event to all connected clients
+
+    // Broadcast cache refresh event to all connected clients scoped to tenant
     // Log error if broadcast fails but don't block the response
     try {
-      await publishMessage('cache:refresh', new Date().toISOString());
+      await publishMessage(`cache:refresh:${tenantId}`, new Date().toISOString());
     } catch (broadcastError) {
       console.error('Failed to broadcast cache refresh event:', broadcastError);
       console.warn('Cache cleared locally but clients may not have been notified');
     }
-    
+
     const response = NextResponse.json({
       message: 'Cache cleared successfully',
       before: beforeStatus,
@@ -50,7 +52,7 @@ export async function POST() {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session) {
       const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');

@@ -20,12 +20,14 @@ export async function GET(
       return response;
     }
 
+    const tenantId = session.user.tenantId;
+
     let product;
     let freshness: FreshnessMetadata;
 
     if (isPriceAuthorityEnabled()) {
       try {
-        const storeData = await getProductsFromStore();
+        const storeData = await getProductsFromStore(tenantId);
         product = storeData.products.find(p => p.id === params.id);
         freshness = {
           price_list_version: storeData.version,

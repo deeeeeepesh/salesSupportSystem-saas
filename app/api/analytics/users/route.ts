@@ -8,13 +8,17 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    
+
     // Only admins can view analytics
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    const tenantId = session.user.tenantId;
+
+    // Fetch analytics scoped to tenant only
     const users = await prisma.user.findMany({
+      where: { tenantId },
       select: {
         id: true,
         email: true,

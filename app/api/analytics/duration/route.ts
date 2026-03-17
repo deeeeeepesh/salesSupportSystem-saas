@@ -8,10 +8,12 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const tenantId = session.user.tenantId;
 
     const body = await request.json();
     const { duration } = body; // duration in seconds
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid duration' }, { status: 400 });
     }
 
-    // Add to cumulative duration and update last active time
+    // Add to cumulative duration and update last active time, scoped to tenant
     await prisma.user.update({
       where: { id: session.user.id },
       data: {

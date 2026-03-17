@@ -13,15 +13,15 @@ const MAX_FUZZY_MATCH_DISTANCE = 2;
 // Simple Levenshtein distance function for fuzzy matching
 function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
-  
+
   for (let i = 0; i <= b.length; i++) {
     matrix[i] = [i];
   }
-  
+
   for (let j = 0; j <= a.length; j++) {
     matrix[0][j] = j;
   }
-  
+
   for (let i = 1; i <= b.length; i++) {
     for (let j = 1; j <= a.length; j++) {
       if (b.charAt(i - 1) === a.charAt(j - 1)) {
@@ -35,7 +35,7 @@ function levenshteinDistance(a: string, b: string): number {
       }
     }
   }
-  
+
   return matrix[b.length][a.length];
 }
 
@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
       return response;
     }
+
+    const tenantId = session.user.tenantId;
 
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -65,10 +67,10 @@ export async function GET(request: NextRequest) {
     // Fetch products - use price authority if enabled, otherwise fall back to Google Sheets
     let products;
     let freshness: FreshnessMetadata;
-    
+
     if (isPriceAuthorityEnabled()) {
       try {
-        const storeData = await getProductsFromStore();
+        const storeData = await getProductsFromStore(tenantId);
         products = storeData.products;
         freshness = {
           price_list_version: storeData.version,
@@ -98,7 +100,7 @@ export async function GET(request: NextRequest) {
     // Apply search filter with multi-word, additional fields, and fuzzy matching
     if (search) {
       const searchWords = search.toLowerCase().trim().split(/\s+/);
-      
+
       products = products.filter(p => {
         // For each word, check if it matches at least one field
         return searchWords.every(word => {
@@ -111,14 +113,14 @@ export async function GET(request: NextRequest) {
             p.upgradeExchangeOffers,
             p.storeOffersGifts,
           ];
-          
+
           // Try exact match first
-          const exactMatch = searchableFields.some(field => 
+          const exactMatch = searchableFields.some(field =>
             field && field.toLowerCase().includes(word)
           );
-          
+
           if (exactMatch) return true;
-          
+
           // Try fuzzy match for words longer than 4 characters
           if (word.length > 4) {
             return searchableFields.some(field => {
@@ -126,12 +128,12 @@ export async function GET(request: NextRequest) {
               const fieldLower = field.toLowerCase();
               // Check for fuzzy match within the field
               const fieldWords = fieldLower.split(/\s+/);
-              return fieldWords.some(fieldWord => 
+              return fieldWords.some(fieldWord =>
                 levenshteinDistance(word, fieldWord) <= MAX_FUZZY_MATCH_DISTANCE
               );
             });
           }
-          
+
           return false;
         });
       });
