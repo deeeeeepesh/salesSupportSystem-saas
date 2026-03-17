@@ -33,9 +33,9 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
 
-    // Trial ends in 14 days
+    // Trial ends in 5 days
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+    trialEndsAt.setDate(trialEndsAt.getDate() + 5);
 
     // Create tenant + admin user + subscription atomically
     const result = await prisma.$transaction(async (tx) => {
