@@ -1,11 +1,11 @@
 {
-  "name": "Sales Support System",
-  "short_name": "SalesApp",
-  "description": "Internal sales support portal for browsing products and prices",
+  "name": "SalesSync by Deda Systems",
+  "short_name": "SalesSync",
+  "description": "Real-time price catalogue for mobile phone and appliance retailers. Synced from Google Sheets, always accurate.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#e65100",
+  "background_color": "#0A0A0A",
+  "theme_color": "#F97316",
   "orientation": "any",
   "categories": ["business", "productivity"],
   "icons": [
