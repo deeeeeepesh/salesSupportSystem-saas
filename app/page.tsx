@@ -17,14 +17,16 @@ function getTenantSlug(): string {
   const params = new URLSearchParams(window.location.search);
   const tenantParam = params.get('tenant');
   if (tenantParam) return tenantParam;
+  // Root domain or local dev — show landing page
   if (hostname === ROOT_DOMAIN || hostname === 'localhost' || hostname === '127.0.0.1') return '';
+  // Subdomain of ROOT_DOMAIN — show login for that tenant
   if (hostname.endsWith(`.${ROOT_DOMAIN}`)) {
     const sub = hostname.replace(`.${ROOT_DOMAIN}`, '');
     if (sub === 'admin') return '';
     return sub;
   }
-  const parts = hostname.split('.');
-  if (parts.length > 1 && parts[0] !== 'www' && parts[0] !== 'localhost') return parts[0];
+  // Any other hostname (Railway, Vercel previews, custom domains not yet configured)
+  // — show landing page, not login
   return '';
 }
 
@@ -559,16 +561,10 @@ function LandingPage() {
       </div>
 
       {/* ══ PROBLEM SECTION ════════════════════════════════════════════════════ */}
-      <section
-        className="py-20 px-4 bg-gray-50"
-        aria-labelledby="problem-heading"
-      >
+      <section className="py-20 px-4 bg-gray-50" aria-labelledby="problem-heading">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <h2
-              id="problem-heading"
-              className="text-3xl md:text-4xl font-black text-gray-900 mb-4"
-            >
+            <h2 id="problem-heading" className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
               If you run a mobile phone or appliance store in India,
               <br />
               <span className="text-red-600">you know this pain.</span>
@@ -626,10 +622,7 @@ function LandingPage() {
       {/* ══ HOW IT WORKS ═══════════════════════════════════════════════════════ */}
       <section className="py-20 px-4 bg-white" aria-labelledby="how-heading">
         <div className="max-w-5xl mx-auto">
-          <h2
-            id="how-heading"
-            className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3"
-          >
+          <h2 id="how-heading" className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3">
             How PriceSync works
           </h2>
           <p className="text-center text-gray-500 mb-14 text-lg">
@@ -637,7 +630,7 @@ function LandingPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {HOW_IT_WORKS.map((step) => (
-              <div key={step.step} className="text-center group">
+              <div key={step.step} className="text-center">
                 <div className="text-4xl mb-3">{step.icon}</div>
                 <div className="text-xs font-black text-blue-700 mb-2 tracking-widest">
                   STEP {step.step}
@@ -653,10 +646,7 @@ function LandingPage() {
       {/* ══ FEATURES ═══════════════════════════════════════════════════════════ */}
       <section className="py-20 px-4 bg-gray-50" aria-labelledby="features-heading">
         <div className="max-w-5xl mx-auto">
-          <h2
-            id="features-heading"
-            className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3"
-          >
+          <h2 id="features-heading" className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3">
             Everything your team needs at the sales counter
           </h2>
           <p className="text-center text-gray-500 mb-14 text-lg max-w-2xl mx-auto">
@@ -702,10 +692,7 @@ function LandingPage() {
             <Badge className="mb-4 bg-indigo-100 text-indigo-700 border-indigo-300">
               Industry First — Unique to PriceSync
             </Badge>
-            <h2
-              id="freshness-heading"
-              className="text-3xl md:text-4xl font-black text-gray-900 mb-4"
-            >
+            <h2 id="freshness-heading" className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
               The Price Freshness Guarantee
             </h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
@@ -717,9 +704,7 @@ function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {FRESHNESS_STATES.map((item) => (
               <div key={item.title} className={`rounded-xl border-2 p-6 ${item.color}`}>
-                <span
-                  className={`inline-block text-xs font-black px-3 py-1 rounded-full border mb-3 ${item.badgeColor}`}
-                >
+                <span className={`inline-block text-xs font-black px-3 py-1 rounded-full border mb-3 ${item.badgeColor}`}>
                   {item.state}
                 </span>
                 <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
@@ -742,10 +727,7 @@ function LandingPage() {
       {/* ══ COMPARISON TABLE ═══════════════════════════════════════════════════ */}
       <section className="py-20 px-4 bg-white" aria-labelledby="comparison-heading">
         <div className="max-w-4xl mx-auto">
-          <h2
-            id="comparison-heading"
-            className="text-3xl font-black text-center text-gray-900 mb-3"
-          >
+          <h2 id="comparison-heading" className="text-3xl font-black text-center text-gray-900 mb-3">
             PriceSync vs. how stores manage prices today
           </h2>
           <p className="text-center text-gray-500 mb-12 text-lg">
@@ -755,32 +737,17 @@ function LandingPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left p-4 font-bold text-gray-700 w-1/3">
-                    What matters to you
-                  </th>
-                  <th className="text-center p-4 font-bold text-gray-500 w-1/3">
-                    Manual (WhatsApp / Printed lists / POS update)
-                  </th>
-                  <th className="text-center p-4 font-bold text-blue-700 w-1/3 bg-blue-50">
-                    With PriceSync
-                  </th>
+                  <th className="text-left p-4 font-bold text-gray-700 w-1/3">What matters to you</th>
+                  <th className="text-center p-4 font-bold text-gray-500 w-1/3">Manual (WhatsApp / Printed lists / POS update)</th>
+                  <th className="text-center p-4 font-bold text-blue-700 w-1/3 bg-blue-50">With PriceSync</th>
                 </tr>
               </thead>
               <tbody>
                 {COMPARISON.map((row, i) => (
-                  <tr
-                    key={row.aspect}
-                    className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}
-                  >
-                    <td className="p-4 font-medium text-gray-700 border-b border-gray-100">
-                      {row.aspect}
-                    </td>
-                    <td className="p-4 text-center text-gray-500 border-b border-gray-100">
-                      {row.manual}
-                    </td>
-                    <td className="p-4 text-center font-medium text-gray-800 bg-blue-50/30 border-b border-gray-100">
-                      {row.pricesync}
-                    </td>
+                  <tr key={row.aspect} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
+                    <td className="p-4 font-medium text-gray-700 border-b border-gray-100">{row.aspect}</td>
+                    <td className="p-4 text-center text-gray-500 border-b border-gray-100">{row.manual}</td>
+                    <td className="p-4 text-center font-medium text-gray-800 bg-blue-50/30 border-b border-gray-100">{row.pricesync}</td>
                   </tr>
                 ))}
               </tbody>
@@ -792,10 +759,7 @@ function LandingPage() {
       {/* ══ WHO IS IT FOR ══════════════════════════════════════════════════════ */}
       <section className="py-20 px-4 bg-gray-50" aria-labelledby="audience-heading">
         <div className="max-w-5xl mx-auto">
-          <h2
-            id="audience-heading"
-            className="text-3xl font-black text-center text-gray-900 mb-3"
-          >
+          <h2 id="audience-heading" className="text-3xl font-black text-center text-gray-900 mb-3">
             Who is PriceSync built for?
           </h2>
           <p className="text-center text-gray-500 mb-12 text-lg">
@@ -815,34 +779,21 @@ function LandingPage() {
                 emoji: '🏢',
                 desc: 'You run 2–20 branches across a city or region. Price consistency is a daily headache. PriceSync gives every branch the same live catalogue with per-branch analytics.',
                 tag: 'Perfect fit',
-                features: [
-                  'Branch-level isolation',
-                  'Consistent prices everywhere',
-                  'Central admin control',
-                ],
+                features: ['Branch-level isolation', 'Consistent prices everywhere', 'Central admin control'],
               },
               {
                 title: 'Franchise & Dealer Networks',
                 emoji: '🌐',
                 desc: 'You manage a network of dealer stores or franchise outlets. PriceSync lets you push one authorised price list to all outlets simultaneously.',
                 tag: 'Enterprise-ready',
-                features: [
-                  'Unlimited branches',
-                  'Super-admin dashboard',
-                  'Dedicated onboarding support',
-                ],
+                features: ['Unlimited branches', 'Super-admin dashboard', 'Dedicated onboarding support'],
               },
             ].map((item) => (
-              <Card
-                key={item.title}
-                className="border-2 border-gray-100 hover:border-blue-200 transition-colors shadow-sm"
-              >
+              <Card key={item.title} className="border-2 border-gray-100 hover:border-blue-200 transition-colors shadow-sm">
                 <CardHeader>
                   <div className="flex items-start justify-between mb-1">
                     <div className="text-4xl">{item.emoji}</div>
-                    <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
-                      {item.tag}
-                    </Badge>
+                    <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">{item.tag}</Badge>
                   </div>
                   <CardTitle className="text-lg">{item.title}</CardTitle>
                 </CardHeader>
@@ -865,10 +816,7 @@ function LandingPage() {
       {/* ══ TESTIMONIALS ═══════════════════════════════════════════════════════ */}
       <section className="py-20 px-4 bg-white" aria-labelledby="testimonials-heading">
         <div className="max-w-5xl mx-auto">
-          <h2
-            id="testimonials-heading"
-            className="text-3xl font-black text-center text-gray-900 mb-3"
-          >
+          <h2 id="testimonials-heading" className="text-3xl font-black text-center text-gray-900 mb-3">
             What store owners &amp; managers say
           </h2>
           <p className="text-center text-gray-500 mb-12">
@@ -876,10 +824,7 @@ function LandingPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {TESTIMONIALS.map((t) => (
-              <blockquote
-                key={t.name}
-                className="bg-gray-50 rounded-xl border border-gray-200 p-5 flex flex-col"
-              >
+              <blockquote key={t.name} className="bg-gray-50 rounded-xl border border-gray-200 p-5 flex flex-col">
                 <StarRating count={t.rating} />
                 <p className="text-gray-700 text-sm leading-relaxed mt-3 mb-4 flex-1">
                   &ldquo;{t.text}&rdquo;
@@ -895,15 +840,9 @@ function LandingPage() {
       </section>
 
       {/* ══ PRICING ════════════════════════════════════════════════════════════ */}
-      <section
-        className="py-20 px-4 bg-gradient-to-b from-gray-50 to-white"
-        aria-labelledby="pricing-heading"
-      >
+      <section className="py-20 px-4 bg-gradient-to-b from-gray-50 to-white" aria-labelledby="pricing-heading">
         <div className="max-w-4xl mx-auto">
-          <h2
-            id="pricing-heading"
-            className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3"
-          >
+          <h2 id="pricing-heading" className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3">
             Simple, transparent pricing
           </h2>
           <p className="text-center text-gray-500 mb-4 text-lg">
@@ -916,7 +855,6 @@ function LandingPage() {
               </p>
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {[
               {
@@ -1009,7 +947,6 @@ function LandingPage() {
               </div>
             ))}
           </div>
-
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 text-center">
             <p className="text-gray-700 text-sm leading-relaxed">
               <strong>Real example:</strong> A store with 6 Sales staff + 1 Manager + 1 Admin
@@ -1024,10 +961,7 @@ function LandingPage() {
       {/* ══ FAQ ════════════════════════════════════════════════════════════════ */}
       <section className="py-20 px-4 bg-white" aria-labelledby="faq-heading">
         <div className="max-w-3xl mx-auto">
-          <h2
-            id="faq-heading"
-            className="text-3xl font-black text-center text-gray-900 mb-12"
-          >
+          <h2 id="faq-heading" className="text-3xl font-black text-center text-gray-900 mb-12">
             Frequently asked questions
           </h2>
           <div className="space-y-3">
@@ -1037,17 +971,14 @@ function LandingPage() {
                   className="w-full text-left px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
-                  aria-controls={`faq-answer-${i}`}
                 >
-                  <span className="font-semibold text-gray-900 text-sm md:text-base">
-                    {faq.q}
-                  </span>
+                  <span className="font-semibold text-gray-900 text-sm md:text-base">{faq.q}</span>
                   <span className="text-gray-400 flex-shrink-0 text-xl font-light">
                     {openFaq === i ? '−' : '+'}
                   </span>
                 </button>
                 {openFaq === i && (
-                  <div id={`faq-answer-${i}`} className="px-6 pb-5">
+                  <div className="px-6 pb-5">
                     <p className="text-gray-600 text-sm leading-relaxed">{faq.a}</p>
                   </div>
                 )}
@@ -1120,7 +1051,6 @@ function LandingPage() {
                     </strong>
                   </p>
                 </div>
-
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="adminName" className="font-semibold">
@@ -1138,9 +1068,7 @@ function LandingPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="phone" className="font-semibold">
-                      Phone
-                    </Label>
+                    <Label htmlFor="phone" className="font-semibold">Phone</Label>
                     <Input
                       id="phone"
                       name="phone"
@@ -1153,7 +1081,6 @@ function LandingPage() {
                     />
                   </div>
                 </div>
-
                 <div className="space-y-1">
                   <Label htmlFor="email" className="font-semibold">
                     Work Email <span className="text-red-500">*</span>
@@ -1170,7 +1097,6 @@ function LandingPage() {
                     className="h-11"
                   />
                 </div>
-
                 <div className="space-y-1">
                   <Label htmlFor="password" className="font-semibold">
                     Password <span className="text-red-500">*</span>
@@ -1188,7 +1114,6 @@ function LandingPage() {
                     className="h-11"
                   />
                 </div>
-
                 <div className="space-y-1">
                   <Label htmlFor="googleSheetId" className="font-semibold">
                     Google Sheet ID{' '}
@@ -1206,17 +1131,14 @@ function LandingPage() {
                     className="h-11"
                   />
                   <p className="text-xs text-gray-500">
-                    From the URL: docs.google.com/spreadsheets/d/
-                    <strong>[THIS PART]</strong>/edit
+                    From the URL: docs.google.com/spreadsheets/d/<strong>[THIS PART]</strong>/edit
                   </p>
                 </div>
-
                 {error && (
                   <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
                     {error}
                   </div>
                 )}
-
                 <Button
                   type="submit"
                   className="w-full bg-blue-700 hover:bg-blue-800 font-black text-base py-6"
@@ -1224,7 +1146,6 @@ function LandingPage() {
                 >
                   {loading ? 'Creating your store...' : 'Create My Store — Start Free Trial →'}
                 </Button>
-
                 <p className="text-xs text-center text-gray-500">
                   By registering you agree to our terms of use. No credit card required for the
                   5-day trial. Cancel anytime.
@@ -1357,9 +1278,7 @@ function LoginPage({ tenantSlug }: { tenantSlug: string }) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1">
-              <Label htmlFor="email" className="font-semibold">
-                Email
-              </Label>
+              <Label htmlFor="email" className="font-semibold">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -1372,9 +1291,7 @@ function LoginPage({ tenantSlug }: { tenantSlug: string }) {
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="password" className="font-semibold">
-                Password
-              </Label>
+              <Label htmlFor="password" className="font-semibold">Password</Label>
               <Input
                 id="password"
                 type="password"
