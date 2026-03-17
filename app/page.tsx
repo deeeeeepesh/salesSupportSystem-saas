@@ -17,91 +17,82 @@ function getTenantSlug(): string {
   const params = new URLSearchParams(window.location.search);
   const tenantParam = params.get('tenant');
   if (tenantParam) return tenantParam;
-  // Root domain or local dev — show landing page
   if (hostname === ROOT_DOMAIN || hostname === 'localhost' || hostname === '127.0.0.1') return '';
-  // Subdomain of ROOT_DOMAIN — show login for that tenant
   if (hostname.endsWith(`.${ROOT_DOMAIN}`)) {
     const sub = hostname.replace(`.${ROOT_DOMAIN}`, '');
     if (sub === 'admin') return '';
     return sub;
   }
-  // Any other hostname (Railway, Vercel previews, custom domains not yet configured)
-  // — show landing page, not login
   return '';
+}
+
+// ─── BRAND ────────────────────────────────────────────────────────────────────
+function BoltIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function LogoMark({ className = '' }: { className?: string }) {
+  return (
+    <div className={`flex items-center gap-2.5 ${className}`}>
+      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-500 text-black flex-shrink-0">
+        <BoltIcon size={16} />
+      </div>
+      <div className="flex flex-col leading-none">
+        <span className="text-xl font-black text-white tracking-tight">SalesSync</span>
+      </div>
+    </div>
+  );
 }
 
 // ─── STRUCTURED DATA ─────────────────────────────────────────────────────────
 const JSON_LD = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'PriceSync',
+  name: 'SalesSync',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Any (Web Browser)',
   inLanguage: 'en-IN',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'INR',
-    description: '5-day free trial — no credit card required',
-  },
-  description:
-    'PriceSync is a real-time price management and sales support system for multi-branch mobile phone and appliance retailers in India. It automatically syncs prices from Google Sheets to every branch and every device, with a stale-price blocker that prevents staff from quoting outdated prices.',
-  audience: {
-    '@type': 'BusinessAudience',
-    audienceType:
-      'Mobile phone retailers, appliance store chains, multi-branch electronics retailers in India',
-  },
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR', description: '5-day free trial' },
+  description: 'SalesSync by Deda Systems — real-time price management for multi-branch mobile phone and appliance retailers in India.',
+  provider: { '@type': 'Organization', name: 'Deda Systems' },
   areaServed: { '@type': 'Country', name: 'India' },
-  featureList: [
-    'Real-time price sync from Google Sheets (every 2 minutes)',
-    'Multi-branch management from one admin dashboard',
-    'Automatic stale price detection and blocking',
-    'Role-based access — Sales staff, Store Manager, Admin',
-    'Counter-optimised mobile and tablet UI',
-    'Offline cache — works without internet',
-    'Single-device login security per account',
-    'Auto-refresh on all connected devices simultaneously',
-    'Bank offer and EMI details per product',
-    'Staff analytics and active session monitoring',
-  ],
-  provider: {
-    '@type': 'Organization',
-    name: 'Deda Systems',
-  },
 });
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
-
 const PAIN_POINTS = [
   {
     emoji: '📋',
     title: 'Printed price lists go stale overnight',
-    desc: "You print 20 copies on Monday. By Tuesday, three models have new offers, one brand dropped MOP by ₹500, and your staff is quoting yesterday's prices to today's customers. The customer knows — they checked online.",
+    desc: "You print 20 copies on Monday. By Tuesday prices changed. Your staff quotes yesterday's prices to today's customers — who checked online and already know better.",
   },
   {
     emoji: '📱',
     title: 'Staff guess prices during peak hours',
-    desc: "On a busy Saturday, staff can't pause a sale to call the manager. They quote the price they remember from last week — which could be wrong by ₹1,000. A wrong quote either loses the customer or costs you the margin.",
+    desc: "On a busy Saturday, staff can't pause a sale to verify prices. They quote from memory — which could be off by ₹1,000. A wrong quote either loses the customer or costs you the margin.",
   },
   {
     emoji: '🏪',
-    title: 'Multi-branch price consistency is a nightmare',
-    desc: "You run 3 branches across the city. Each manager maintains their own list. The same Samsung A55 has three different prices on the same day. A customer from Branch 2 comes to Branch 1 — and walks out angry.",
+    title: 'Multi-branch consistency is a nightmare',
+    desc: "You run 3 branches. Each manager maintains their own list. The same Samsung A55 has three different prices on the same day. A customer notices — and walks.",
   },
   {
     emoji: '🏷️',
-    title: 'Bank offers and exchange deals change weekly',
-    desc: "HDFC has a ₹3,000 cashback this weekend. ICICI has EMI offers. Exchange values change daily. Your frontline staff either doesn't know or spends 5 minutes finding out — the customer loses patience and walks.",
+    title: 'Bank offers and EMI deals change weekly',
+    desc: "HDFC has a ₹3,000 cashback this weekend. ICICI has no-cost EMI. Your frontline staff either don't know or take 5 minutes finding out — the customer loses patience and walks.",
   },
   {
     emoji: '🔄',
-    title: 'POS price updates are a slow operational task',
-    desc: "Updating the POS or ERP with the new price list takes your manager 2–3 hours every week. On launch days — like a new iPhone or Samsung Galaxy — the system needs a full update while the store is open and billing.",
+    title: 'POS price updates are a slow, manual task',
+    desc: "Updating the POS or ERP takes your manager 2–3 hours every week. On a new iPhone launch day, the system needs a full update while the store is open and billing.",
   },
   {
     emoji: '📉',
-    title: 'New launches create chaos on day one',
-    desc: "A new flagship launches today. Specs, prices, colours, and offers aren't in your system yet. Staff google pricing on their personal phones while the customer waits. You look unprepared.",
+    title: 'New model launches create day-one chaos',
+    desc: "A new flagship is out today. Specs, prices, colours, and offers aren't in your system yet. Staff are googling pricing on their personal phones while the customer waits.",
   },
 ];
 
@@ -109,264 +100,179 @@ const FEATURES = [
   {
     icon: '⚡',
     title: 'Live Price Sync from Google Sheets',
-    desc: "You already manage your price list in Google Sheets. PriceSync reads it every 2 minutes and pushes changes to every device across every branch — automatically. No manual entry, no CSV uploads.",
+    desc: "You already manage your price list in Google Sheets. SalesSync reads it every 2 minutes and pushes changes to every device in every branch — automatically. No manual entry, no CSV uploads.",
     highlight: 'Works with your existing workflow',
     core: true,
   },
   {
     icon: '🛡️',
-    title: 'Stale Price Blocker — The Industry First',
-    desc: "If prices haven't refreshed in 5 minutes, PriceSync automatically blocks the catalogue with a clear warning. Staff cannot quote stale prices. In a market where prices change ₹1,000 in a day, this is not optional.",
-    highlight: 'Unique to PriceSync',
+    title: 'Stale Price Blocker — Industry First',
+    desc: "If prices haven't refreshed in 5 minutes, SalesSync blocks the catalogue with a clear warning. Staff cannot quote stale prices. In a market where prices change ₹1,000 in a day, this is essential.",
+    highlight: 'Unique to SalesSync',
     core: true,
   },
   {
     icon: '🔍',
     title: 'Instant Smart Search Catalogue',
-    desc: 'Staff type "samng a5" and find Samsung A55 instantly. Handles typos, partial names, RAM/ROM specs, and offer keywords. Find any product across 500+ SKUs in under 3 seconds — faster than any POS.',
+    desc: "Staff type 'samng a5' and find Samsung A55 instantly. Handles typos, partial names, RAM/ROM specs, and offer keywords. Find any product across 500+ SKUs in under 3 seconds.",
     highlight: 'Typo-tolerant, instant results',
     core: false,
   },
   {
     icon: '🏢',
     title: 'Multi-Branch from One Admin Seat',
-    desc: 'Each branch gets its own secure login portal at its own URL. All branches share the same live price list. One update from HQ — reflected across all branches in 2 minutes.',
+    desc: 'Each branch gets its own private login URL. All branches share the same live price list. One update from HQ — reflected across all branches in under 2 minutes.',
     highlight: 'For 2–50 branch operations',
     core: false,
   },
   {
     icon: '🔔',
     title: 'Auto-Refresh All Devices Simultaneously',
-    desc: 'When you update prices, every open browser tab across every device in every branch automatically refreshes — no F5, no manual action needed. Powered by Redis pub/sub and Server-Sent Events.',
-    highlight: 'Zero-lag propagation',
+    desc: "When prices update, every open browser tab on every device in every branch refreshes automatically — no F5, no manual action. Powered by Redis pub/sub and Server-Sent Events.",
+    highlight: 'Zero-lag, zero effort',
     core: true,
   },
   {
     icon: '📊',
     title: 'Offers, EMI & Sales Pitch per Product',
-    desc: "Every product page shows the current offer, bank EMI schemes, exchange rate, and your custom sales pitch. Staff have everything they need to close the sale — in one screen, not 4 different apps.",
-    highlight: 'Bank offers & EMI details built-in',
+    desc: "Every product card shows the current offer, bank EMI schemes, exchange value, and your custom sales pitch. Staff close sales with full confidence — everything in one screen.",
+    highlight: 'Bank offers & EMI built-in',
     core: false,
   },
   {
     icon: '📴',
     title: 'Works Offline — No Internet, No Problem',
-    desc: "Poor network at the counter? PriceSync caches the latest price list on-device. Staff browse the full catalogue even when offline. A clear badge shows the sync status. Auto-syncs the moment connectivity returns.",
+    desc: "Poor network at the counter? SalesSync caches the latest price list on-device. Staff browse the full catalogue offline. Auto-syncs the moment connectivity returns.",
     highlight: 'Offline cache on every device',
-    core: false,
-  },
-  {
-    icon: '👥',
-    title: 'Role-Based Access for Every Level',
-    desc: 'Sales staff see the catalogue. Store managers see team analytics. Owners see everything — user management, sync controls, and audit logs. Right information to the right person, nothing more.',
-    highlight: 'No information overload for floor staff',
     core: false,
   },
   {
     icon: '🔒',
     title: 'Single-Device Login Security',
-    desc: 'One account, one active device at a time. If a staff member logs in on a new device, the previous session is immediately terminated with a notification. Your price data stays protected.',
-    highlight: 'Enterprise-grade session security',
+    desc: "One account, one active device at a time. Login on a new device immediately terminates the previous session. Your price data stays protected from shared-login abuse.",
+    highlight: 'Enterprise-grade security',
     core: false,
   },
 ];
 
 const HOW_IT_WORKS = [
-  {
-    step: '01',
-    title: 'Register Your Store',
-    desc: "Create your store in 2 minutes. You get a private URL — yourstore.salessupportapp.dedasystems.com. Only staff you add can access it. Nothing is public.",
-    icon: '🏪',
-  },
-  {
-    step: '02',
-    title: 'Connect Your Google Sheet',
-    desc: "Paste your Google Sheet ID. PriceSync connects securely using a read-only service account. No need to share edit access. Your sheet stays yours.",
-    icon: '📊',
-  },
-  {
-    step: '03',
-    title: 'Add Your Staff & Branches',
-    desc: "Create logins for your team, assign roles (Sales / Manager / Admin). Share the URL. They open it on any device, log in, and they're live.",
-    icon: '👥',
-  },
-  {
-    step: '04',
-    title: 'Update Once, Seen Everywhere',
-    desc: "Change a price in your Google Sheet. In under 2 minutes, every staff member in every branch sees the update on their device — automatically.",
-    icon: '⚡',
-  },
+  { step: '01', title: 'Register Your Store', desc: "Create your store in 2 minutes. You get a private URL — yourstore.salessupportapp.dedasystems.com — only your staff can access it.", icon: '🏪' },
+  { step: '02', title: 'Connect Your Google Sheet', desc: "Paste your Google Sheet ID. SalesSync connects using a read-only service account. No need to share edit access. Your sheet stays yours.", icon: '📊' },
+  { step: '03', title: 'Add Your Staff', desc: "Create logins, assign roles (Sales / Manager / Admin). Share the URL. Staff open it on any device, log in — they're live.", icon: '👥' },
+  { step: '04', title: 'Update Once, Seen Everywhere', desc: "Change a price in your Sheet. In under 2 minutes every staff member in every branch sees the update on their device — automatically.", icon: '⚡' },
 ];
 
 const FRESHNESS_STATES = [
   {
     state: '✅ LIVE',
-    color: 'bg-green-50 border-green-300',
-    badgeColor: 'bg-green-100 text-green-800 border-green-300',
+    border: 'border-emerald-500/30',
+    bg: 'bg-emerald-500/5',
+    badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     title: 'Prices are accurate & current',
-    desc: 'Data synced within the last 5 minutes. Staff can quote any price with full confidence. Catalogue is fully accessible.',
+    desc: 'Data synced within the last 5 minutes. Staff can quote any price with complete confidence.',
   },
   {
     state: '🔄 SYNCING',
-    color: 'bg-yellow-50 border-yellow-300',
-    badgeColor: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    border: 'border-amber-500/30',
+    bg: 'bg-amber-500/5',
+    badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     title: 'Refresh in progress',
-    desc: "Prices may be slightly older. An overlay shows staff that a sync is happening. Refreshes automatically — no action needed.",
+    desc: "Prices may be slightly older. An overlay tells staff a sync is happening. Refreshes automatically.",
   },
   {
     state: '🔴 BLOCKED',
-    color: 'bg-red-50 border-red-300',
-    badgeColor: 'bg-red-100 text-red-800 border-red-300',
+    border: 'border-red-500/30',
+    bg: 'bg-red-500/5',
+    badge: 'bg-red-500/10 text-red-400 border-red-500/20',
     title: 'Stale data — catalogue blocked',
-    desc: 'Data is more than 5 minutes old without a successful sync. Catalogue is fully blocked. Staff cannot quote prices until fresh data loads.',
+    desc: 'Data is more than 5 minutes old. Catalogue fully blocked. Staff cannot quote any prices until fresh data loads.',
   },
 ];
 
 const COMPARISON = [
-  {
-    aspect: 'Price accuracy guarantee',
-    manual: '❌ No guarantee — stale data shown silently',
-    pricesync: '✅ Stale price automatically blocked, never shown',
-  },
-  {
-    aspect: 'Speed to update all branches',
-    manual: '🐌 1–3 hours (print, send, distribute)',
-    pricesync: '⚡ Under 2 minutes, automatic',
-  },
-  {
-    aspect: 'Works during busy peak hours',
-    manual: '❌ Staff too busy for manual updates',
-    pricesync: '✅ Fully automatic — zero staff effort',
-  },
-  {
-    aspect: 'New model launch day readiness',
-    manual: '❌ Day-1 chaos is normal',
-    pricesync: '✅ Add to Sheet → live everywhere instantly',
-  },
-  {
-    aspect: 'Bank offer & EMI visibility',
-    manual: '❌ Staff must remember or call manager',
-    pricesync: '✅ Shown on every product card automatically',
-  },
-  {
-    aspect: 'Works when network is slow',
-    manual: '✅ Physical lists always work',
-    pricesync: '✅ Offline cache shows last synced prices',
-  },
-  {
-    aspect: 'Multi-branch consistency',
-    manual: '❌ Each branch maintains its own version',
-    pricesync: '✅ All branches on the same live list always',
-  },
-  {
-    aspect: 'Cost of wrong quotes',
-    manual: '💸 Lost sales + margin hits + customer trust',
-    pricesync: '₹300–₹700/user/month — pays for itself day one',
-  },
+  { aspect: 'Price accuracy guarantee', manual: '❌ Stale data shown silently', pricesync: '✅ Stale price auto-blocked' },
+  { aspect: 'Speed to update all branches', manual: '🐌 1–3 hours (print, send)', pricesync: '⚡ Under 2 minutes, automatic' },
+  { aspect: 'Works during peak hours', manual: '❌ Staff too busy to update', pricesync: '✅ Fully automatic — zero effort' },
+  { aspect: 'New model launch readiness', manual: '❌ Day-1 chaos is normal', pricesync: '✅ Add to Sheet → live instantly' },
+  { aspect: 'Bank offer & EMI visibility', manual: '❌ Staff must remember or call', pricesync: '✅ Shown on every product card' },
+  { aspect: 'Works when network is slow', manual: '✅ Physical lists work offline', pricesync: '✅ Offline cache always available' },
+  { aspect: 'Multi-branch consistency', manual: '❌ Each branch has its own version', pricesync: '✅ All branches on same live list' },
+  { aspect: 'Monthly cost', manual: '💸 Printing + lost margins', pricesync: '₹300–₹700 / user / month' },
 ];
 
 const TESTIMONIALS = [
   {
     name: 'Suresh Menon',
     role: 'Owner, 3-branch mobile store, Kochi',
-    text: "Before PriceSync, I was sending price updates on WhatsApp and praying everyone saw them in time. Now I update the Sheet and I'm done. All three stores are always on the same page — literally.",
-    rating: 5,
+    text: "Before SalesSync, I was sending price updates on WhatsApp and praying everyone saw them. Now I update the Sheet and I'm done. All three branches are always on the same page.",
   },
   {
     name: 'Priya Ranganathan',
     role: 'Operations Head, 8-store electronics chain, Chennai',
-    text: "We run 8 stores across Tamil Nadu. The Saturday new-launch madness is gone. Staff have the new model's price and all bank offers on their phone before the first customer walks in.",
-    rating: 5,
+    text: "The Saturday new-launch madness is gone. Staff have the new model's price and all bank offers on their phone before the first customer walks in.",
   },
   {
     name: 'Amit Gupta',
-    role: 'Store Manager, Samsung exclusive store, Ahmedabad',
-    text: "The stale price blocker changed everything for us. Staff know that if the badge is green, the price is accurate. That confidence closes ₹50,000 sales. Before this, we were guessing.",
-    rating: 5,
+    role: 'Store Manager, Samsung exclusive, Ahmedabad',
+    text: "The stale price blocker changed everything. Staff know the orange badge means the price is accurate. That confidence closes ₹50,000 sales. Before this, we were guessing.",
   },
   {
     name: 'Kavitha Nair',
     role: 'Co-owner, Reliance Digital franchise, Bengaluru',
-    text: "Setup took 20 minutes. We connected our Google Sheet, added 12 staff, and went live. Now I change a price from home and it's on the store floor in 2 minutes. No calls, no WhatsApp.",
-    rating: 5,
+    text: "Setup took 20 minutes. We connected our Sheet, added 12 staff, went live. I change a price from home and it's on the store floor in 2 minutes. No calls, no WhatsApp.",
   },
 ];
 
 const FAQS = [
-  {
-    q: 'Do my staff need to install any app?',
-    a: "No installation needed at all. PriceSync is a web application that works in any browser on any device — Android phone, iPhone, tablet, or laptop. Staff just open the URL and log in. It also supports 'Add to Home Screen' via PWA, giving an app-like experience without the Play Store or App Store.",
-  },
-  {
-    q: 'What if the internet goes down in the store?',
-    a: "PriceSync caches the latest price list on every device. Staff can continue browsing the full catalogue even without internet. The UI clearly shows an 'Offline — showing last synced data' status badge. The moment connectivity returns, it auto-syncs all updates.",
-  },
-  {
-    q: 'We have 4 branches. Do we need 4 separate accounts?',
-    a: 'You can structure it either way. Each branch can be its own isolated store (separate Google Sheet, separate staff pool) or you can run all branches under one store with a shared catalogue. Most multi-branch operators create one store per branch for clean per-branch analytics and access control.',
-  },
-  {
-    q: 'How do I update prices?',
-    a: "Just update your existing Google Sheet — exactly as you do today. PriceSync reads the sheet every 2 minutes and pushes updates to all connected devices automatically. No login to PriceSync, no manual sync button. You can also force-sync instantly from the Admin panel anytime.",
-  },
-  {
-    q: "Is my price data secure? Can competitors or the public see my prices?",
-    a: "Your store is completely private. Only staff accounts you create can log in. Data is isolated per store — no other user or store can see your prices, staff list, or catalogue. All data is encrypted in transit (TLS) and at rest. Sessions are tracked and can be remotely terminated.",
-  },
-  {
-    q: 'What happens after the 5-day free trial?',
-    a: "After the trial, you choose a plan and add a payment method via Razorpay. Billing is per user per month — ₹300 for Sales staff, ₹500 for Store Managers, ₹700 for Admins. You only pay for active users. No annual lock-in, no contracts. Cancel anytime and your data is yours to export.",
-  },
-  {
-    q: 'We also sell appliances — TVs, ACs, refrigerators. Does PriceSync work?',
-    a: 'Yes. PriceSync works for any product catalogue. Mobile phones, tablets, smartwatches, accessories, TVs, ACs, washing machines, refrigerators — anything in your Google Sheet will be in PriceSync. The search system handles any product category.',
-  },
-  {
-    q: "What is the 'stale price blocker' and why does it matter?",
-    a: "If price data on a device is more than 5 minutes old without a successful sync, PriceSync automatically blocks the catalogue view with a clear red warning. Staff cannot quote prices from stale data. In Indian mobile retail where prices change ₹500–₹2,000 in a day, quoting a wrong price either loses the sale or costs you the margin. The blocker is the feature that makes PriceSync worth every rupee.",
-  },
-  {
-    q: 'How is PriceSync different from sharing a Google Sheet link with my staff?',
-    a: "A raw Sheet is not built for the sales counter — it's slow on mobile, hard to search under time pressure, shows edit history, and has no access control. PriceSync turns your Sheet data into a fast, role-controlled, always-live catalogue with stale price blocking, staff analytics, offline support, bank offer details, and session security that a shared Sheet can never provide.",
-  },
+  { q: 'Do my staff need to install any app?', a: "No installation needed. SalesSync is a web app that works in any browser on any device — Android, iPhone, tablet, laptop. Staff open the URL and log in. It also supports 'Add to Home Screen' via PWA — no app store required." },
+  { q: 'What if the internet goes down in the store?', a: "SalesSync caches the latest price list on every device. Staff continue browsing the full catalogue offline. The UI shows 'Offline — showing last synced data'. Auto-syncs the moment connectivity returns." },
+  { q: 'We have 4 branches. Do we need 4 separate accounts?', a: "You can structure it either way — each branch as its own isolated store, or all branches under one store. Most multi-branch operators create one store per branch for clean per-branch analytics." },
+  { q: 'How do I update prices?', a: "Just update your Google Sheet — exactly as you do today. SalesSync reads it every 2 minutes and pushes updates to all connected devices automatically. You can also force-sync instantly from the Admin panel." },
+  { q: 'Is my price data secure?', a: "Your store is completely private. Only staff accounts you create can log in. Data is isolated per store — no other user can see your prices or catalogue. All data is encrypted in transit and at rest." },
+  { q: 'What happens after the 5-day free trial?', a: "After the trial, add a payment method via Razorpay. Billing is per user per month — ₹300 Sales, ₹500 Manager, ₹700 Admin. You only pay for active users. No contracts, cancel anytime." },
+  { q: 'We also sell appliances — TVs, ACs, fridges. Does it work?', a: "Yes. SalesSync works for any product catalogue in Google Sheets — phones, tablets, accessories, TVs, ACs, washing machines. Any product with a dynamic price list." },
+  { q: "What exactly is the 'stale price blocker'?", a: "If price data is more than 5 minutes old without a successful sync, SalesSync automatically blocks the catalogue with a red warning. Staff cannot quote prices from stale data. In Indian mobile retail where prices change ₹500–₹2,000 in a day, this single feature pays for the subscription." },
+  { q: 'How is SalesSync different from sharing a Google Sheet with staff?', a: "A raw Sheet is not built for the sales counter — slow on mobile, hard to search, shows edit history, no access control, no security. SalesSync turns your Sheet into a fast, role-controlled, always-live catalogue with stale price blocking, offline support, bank offer details, and session security." },
 ];
 
-// ─── SUBCOMPONENTS ────────────────────────────────────────────────────────────
+// ─── COMPONENTS ───────────────────────────────────────────────────────────────
 
-function StarRating({ count }: { count: number }) {
+function Stars({ count = 5 }: { count?: number }) {
   return (
-    <div className="flex gap-0.5" aria-label={`${count} out of 5 stars`}>
+    <div className="flex gap-0.5">
       {Array.from({ length: count }).map((_, i) => (
-        <span key={i} className="text-yellow-400 text-sm" aria-hidden="true">★</span>
+        <span key={i} className="text-orange-500 text-sm">★</span>
       ))}
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex justify-center mb-4">
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-500 border border-orange-500/30 bg-orange-500/5 px-3 py-1 rounded-full uppercase tracking-wider">
+        {children}
+      </span>
     </div>
   );
 }
 
 function Navbar({ onRegisterClick }: { onRegisterClick: () => void }) {
   return (
-    <nav
-      className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-4 py-3"
-      role="navigation"
-      aria-label="Main navigation"
-    >
+    <nav className="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-zinc-800 px-4 py-3">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-black text-blue-700 tracking-tight">PriceSync</span>
-          <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
-            for mobile &amp; appliance stores
-          </Badge>
+        <div className="flex items-center gap-4">
+          <LogoMark />
+          <span className="text-zinc-600 text-xs hidden md:block">by Deda Systems</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500 hidden lg:block">
-            Built for Indian multi-branch retailers
-          </span>
+          <span className="text-sm text-zinc-500 hidden lg:block">For Indian mobile &amp; appliance retailers</span>
           <Button
             size="sm"
             onClick={onRegisterClick}
-            className="bg-blue-700 hover:bg-blue-800 text-white font-semibold shadow-sm"
+            className="bg-orange-500 hover:bg-orange-400 text-black font-bold shadow-lg shadow-orange-500/20"
           >
-            Start 5-Day Free Trial
+            Start Free Trial
           </Button>
         </div>
       </div>
@@ -377,29 +283,16 @@ function Navbar({ onRegisterClick }: { onRegisterClick: () => void }) {
 // ─── LANDING PAGE ─────────────────────────────────────────────────────────────
 
 function LandingPage() {
-  const [formData, setFormData] = useState({
-    storeName: '',
-    email: '',
-    password: '',
-    adminName: '',
-    phone: '',
-    googleSheetId: '',
-  });
+  const [formData, setFormData] = useState({ storeName: '', email: '', password: '', adminName: '', phone: '', googleSheetId: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState<{
-    slug: string;
-    url: string;
-    trialEndsAt: string;
-  } | null>(null);
+  const [success, setSuccess] = useState<{ slug: string; url: string; trialEndsAt: string } | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  const scrollToForm = () =>
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
+  const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -412,11 +305,8 @@ function LandingPage() {
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Registration failed. Please try again.');
-      } else {
-        setSuccess({ slug: data.slug, url: data.url, trialEndsAt: data.trialEndsAt });
-      }
+      if (!res.ok) setError(data.error || 'Registration failed.');
+      else setSuccess({ slug: data.slug, url: data.url, trialEndsAt: data.trialEndsAt });
     } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
@@ -425,256 +315,234 @@ function LandingPage() {
   };
 
   const storeSlugPreview = formData.storeName
-    ? formData.storeName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
+    ? formData.storeName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
     : 'yourstore';
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
-        <Card className="w-full max-w-lg shadow-xl border-0">
-          <CardHeader className="text-center pb-2">
-            <div className="text-5xl mb-3">🎉</div>
-            <CardTitle className="text-2xl text-green-700">Your Store is Live!</CardTitle>
-            <CardDescription className="text-base">
-              5-day free trial has started. No credit card needed.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-xs text-green-600 font-semibold uppercase tracking-wide mb-1">
-                Your Private Store URL
+      <div className="min-h-screen flex items-center justify-center bg-black p-4">
+        <div className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🎉</span>
+            </div>
+            <h2 className="text-2xl font-black text-white mb-1">Your Store is Live!</h2>
+            <p className="text-zinc-400 text-sm">5-day free trial has started. No credit card needed.</p>
+          </div>
+          <div className="bg-zinc-800 rounded-xl p-4 mb-4">
+            <p className="text-xs text-orange-500 font-semibold uppercase tracking-wide mb-1">Your Private Store URL</p>
+            <a href={success.url} className="text-orange-400 font-mono text-sm break-all hover:text-orange-300 font-bold">{success.url}</a>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-zinc-800 rounded-xl p-3">
+              <p className="text-zinc-500 text-xs mb-0.5">Trial Ends</p>
+              <p className="font-semibold text-white text-sm">
+                {new Date(success.trialEndsAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
               </p>
-              <a
-                href={success.url}
-                className="text-green-800 font-mono text-sm break-all hover:underline font-bold"
-              >
-                {success.url}
-              </a>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-gray-500 text-xs">Trial Ends</p>
-                <p className="font-semibold text-gray-800">
-                  {new Date(success.trialEndsAt).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-gray-500 text-xs">Next Step</p>
-                <p className="font-semibold text-gray-800">Connect your Google Sheet</p>
-              </div>
+            <div className="bg-zinc-800 rounded-xl p-3">
+              <p className="text-zinc-500 text-xs mb-0.5">Next Step</p>
+              <p className="font-semibold text-white text-sm">Connect Google Sheet</p>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 leading-relaxed">
-              <strong>What to do now:</strong> Click your store URL above → Log in with the email
-              and password you just set → Go to <strong>Admin → Settings</strong> to connect your
-              Google Sheets price list → Add staff accounts for your team.
-            </div>
-            <Button
-              className="w-full bg-green-700 hover:bg-green-800 font-bold text-base py-6"
-              onClick={() => {
-                window.location.href = success.url;
-              }}
-            >
-              Open My Store →
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="bg-orange-500/5 border border-orange-500/20 rounded-xl p-4 text-sm text-orange-200 leading-relaxed mb-5">
+            <strong className="text-orange-400">What to do now:</strong> Open your store URL → log in with your email and password → go to <strong>Admin → Settings</strong> to connect your Google Sheet → add staff accounts.
+          </div>
+          <Button className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black py-6" onClick={() => { window.location.href = success.url; }}>
+            Open My Store →
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
-      {/* JSON-LD for SEO */}
+    <div className="min-h-screen bg-black text-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON_LD }} />
-
       <Navbar onRegisterClick={scrollToForm} />
 
-      {/* ══ HERO ═══════════════════════════════════════════════════════════════ */}
-      <section
-        className="bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 text-white py-20 md:py-28 px-4"
-        aria-labelledby="hero-heading"
-      >
-        <div className="max-w-5xl mx-auto text-center">
-          <Badge className="mb-5 bg-blue-500/30 text-blue-100 border-blue-400/50 text-sm px-4 py-1.5">
-            Built exclusively for Indian mobile phone &amp; appliance retailers
-          </Badge>
-          <h1
-            id="hero-heading"
-            className="text-4xl md:text-6xl font-black mb-6 leading-tight tracking-tight"
-          >
-            Your staff will never quote
-            <br />
-            <span className="text-yellow-300">a wrong price again.</span>
+      {/* ══ HERO ════════════════════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden bg-black py-24 md:py-32 px-4" aria-labelledby="hero-heading">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% -5%, rgba(249,115,22,0.10), transparent 70%)' }} />
+        {/* Grid pattern */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+
+        <div className="relative max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm px-4 py-1.5 rounded-full mb-8 font-medium">
+            <BoltIcon size={12} />
+            Built exclusively for Indian mobile &amp; appliance retailers
+          </div>
+          <h1 id="hero-heading" className="text-5xl md:text-7xl font-black mb-6 leading-[1.05] tracking-tight">
+            Your staff will never<br />
+            quote{' '}
+            <span style={{ background: 'linear-gradient(135deg, #f97316, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              a wrong price
+            </span>
+            <br />again.
           </h1>
-          <p className="text-xl md:text-2xl text-blue-100 mb-5 max-w-3xl mx-auto leading-relaxed">
-            PriceSync gives every salesperson in every branch a live, searchable price
-            catalogue — synced automatically from your Google Sheet, updated in real time,
-            accessible on any phone or tablet at the counter.
+          <p className="text-xl md:text-2xl text-zinc-400 mb-5 max-w-2xl mx-auto leading-relaxed">
+            SalesSync gives every salesperson in every branch a live, searchable price catalogue — synced from your Google Sheet in real time, on any phone or tablet at the counter.
           </p>
-          <p className="text-blue-200 mb-10 text-lg max-w-2xl mx-auto">
-            No more printed price lists. No more WhatsApp price forwards. No more customers
-            walking because your staff didn&apos;t know today&apos;s offer or bank EMI scheme.
+          <p className="text-zinc-500 mb-10 max-w-xl mx-auto">
+            No printed lists. No WhatsApp price forwards. No customers walking because your staff didn&apos;t know today&apos;s offer.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-10">
             <Button
               size="lg"
               onClick={scrollToForm}
-              className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-black text-lg px-10 py-7 rounded-xl shadow-lg transition-transform hover:scale-105"
+              className="bg-orange-500 hover:bg-orange-400 text-black font-black text-lg px-10 py-7 rounded-xl shadow-2xl shadow-orange-500/25 transition-all hover:scale-105"
             >
               Start Free — 5 Days, No Credit Card
             </Button>
           </div>
-          <div className="flex flex-wrap justify-center gap-5 text-blue-200 text-sm">
-            {[
-              '✓ Setup in under 10 minutes',
-              '✓ No app to install',
-              '✓ Works on any phone or tablet',
-              '✓ Cancel anytime',
-            ].map((item) => (
-              <span key={item}>{item}</span>
+          <div className="flex flex-wrap justify-center gap-6 text-zinc-500 text-sm">
+            {['✓ Setup in 10 minutes', '✓ No app to install', '✓ Any phone or tablet', '✓ Cancel anytime'].map((item) => (
+              <span key={item} className="flex items-center gap-1">{item}</span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══ TRUST BAR ══════════════════════════════════════════════════════════ */}
-      <div className="bg-blue-900 py-5 px-4">
-        <div className="max-w-5xl mx-auto flex flex-wrap justify-center gap-5 text-sm text-blue-200">
+      {/* ══ TRUST BAR ═══════════════════════════════════════════════════════════ */}
+      <div className="border-y border-zinc-800 bg-zinc-950 py-4 px-4">
+        <div className="max-w-5xl mx-auto flex flex-wrap justify-center gap-6 text-sm text-zinc-500">
           {[
-            '📍 Multi-branch support built-in',
-            '⚡ Prices sync in under 2 minutes',
-            '🛡️ Stale price auto-blocked',
-            '📴 Full offline support',
-            '🔒 Single-device session security',
-            '📊 Staff analytics included',
-          ].map((item) => (
-            <span key={item}>{item}</span>
+            ['⚡', 'Prices sync in under 2 min'],
+            ['🛡️', 'Stale price auto-blocked'],
+            ['🏢', 'Multi-branch built-in'],
+            ['📴', 'Full offline support'],
+            ['🔒', 'Single-device security'],
+            ['📊', 'Staff analytics included'],
+          ].map(([icon, label]) => (
+            <span key={label} className="flex items-center gap-1.5">
+              <span>{icon}</span>
+              <span>{label}</span>
+            </span>
           ))}
         </div>
       </div>
 
-      {/* ══ PROBLEM SECTION ════════════════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-gray-50" aria-labelledby="problem-heading">
+      {/* ══ PAIN SECTION ════════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-zinc-950" aria-labelledby="problem-heading">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <h2 id="problem-heading" className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              If you run a mobile phone or appliance store in India,
+            <SectionLabel>The Problem</SectionLabel>
+            <h2 id="problem-heading" className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
+              If you run a mobile phone or
               <br />
-              <span className="text-red-600">you know this pain.</span>
+              <span className="text-red-400">appliance store in India — you know this pain.</span>
             </h2>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-              Prices change daily. Offers expire overnight. New models launch every week.
-              Your team is doing their best — but manual processes can&apos;t keep up with
-              today&apos;s market pace.
+            <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+              Prices change daily. Offers expire overnight. New models launch every week. Manual processes can&apos;t keep up.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {PAIN_POINTS.map((point) => (
               <article
                 key={point.title}
-                className="bg-white rounded-xl border border-red-100 p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-zinc-900 rounded-xl border border-zinc-800 hover:border-red-500/30 p-6 transition-colors group"
               >
-                <div className="text-3xl mb-3">{point.emoji}</div>
-                <h3 className="font-bold text-gray-900 mb-2">{point.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{point.desc}</p>
+                <div className="w-10 h-10 rounded-lg bg-zinc-800 group-hover:bg-red-500/10 flex items-center justify-center text-xl mb-4 transition-colors flex-shrink-0">
+                  {point.emoji}
+                </div>
+                <h3 className="font-bold text-white mb-2 text-base">{point.title}</h3>
+                <p className="text-zinc-400 text-sm leading-relaxed">{point.desc}</p>
               </article>
             ))}
           </div>
-          <div className="mt-12 text-center">
-            <div className="inline-block bg-red-50 border border-red-200 rounded-xl px-8 py-5 max-w-2xl">
-              <p className="text-red-800 font-semibold text-lg">
-                Every wrong price quoted is either a lost sale or a lost margin.
+          <div className="mt-10 flex justify-center">
+            <div className="inline-block bg-red-500/5 border border-red-500/20 rounded-xl px-8 py-5 max-w-2xl text-center">
+              <p className="text-red-400 font-semibold text-lg">
+                Every wrong price quoted = a lost sale or a lost margin.
                 <br />
-                <span className="font-black">
-                  Across a 5-person team, this happens 10–20 times a week.
-                </span>
+                <span className="font-black text-red-300">Across a 5-person team, this happens 10–20× a week.</span>
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ══ SOLUTION CALLOUT ═══════════════════════════════════════════════════ */}
-      <section className="py-16 px-4 bg-blue-700 text-white">
+      {/* ══ SOLUTION CALLOUT ════════════════════════════════════════════════════ */}
+      <section className="py-16 px-4 bg-orange-500">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-black mb-5">
-            PriceSync solves the dynamic pricing problem permanently.
+          <h2 className="text-3xl md:text-4xl font-black text-black mb-4">
+            SalesSync solves dynamic pricing permanently.
           </h2>
-          <p className="text-blue-100 text-lg max-w-2xl mx-auto leading-relaxed">
-            One source of truth: your Google Sheet. PriceSync reads it every 2 minutes and
-            instantly pushes changes to every device in every branch. The moment you update
-            a price, add a new model, or change a bank offer — every salesperson sees it in
-            under 2 minutes, on their phone, at the counter.
+          <p className="text-orange-950 text-lg max-w-2xl mx-auto leading-relaxed">
+            One source of truth: your Google Sheet. SalesSync reads it every 2 minutes and pushes changes to every device in every branch. The moment you update a price or add an offer — every salesperson sees it, on their phone, at the counter.
           </p>
-          <p className="text-blue-200 mt-4 text-base">
-            No emails. No WhatsApp forwards. No printed sheets. No POS update sessions.
+          <p className="text-orange-900 mt-3 font-medium">
+            No emails. No WhatsApp. No printed sheets. No POS update sessions.
           </p>
         </div>
       </section>
 
-      {/* ══ HOW IT WORKS ═══════════════════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-white" aria-labelledby="how-heading">
+      {/* ══ HOW IT WORKS ════════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-black" aria-labelledby="how-heading">
         <div className="max-w-5xl mx-auto">
-          <h2 id="how-heading" className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3">
-            How PriceSync works
+          <SectionLabel>How It Works</SectionLabel>
+          <h2 id="how-heading" className="text-3xl md:text-5xl font-black text-center text-white mb-3">
+            Live in under 10 minutes
           </h2>
-          <p className="text-center text-gray-500 mb-14 text-lg">
-            Setup takes less than 10 minutes. No IT team. No technical knowledge required.
-          </p>
+          <p className="text-center text-zinc-500 mb-16 text-lg">No IT team. No technical knowledge. No hardware to buy.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {HOW_IT_WORKS.map((step) => (
-              <div key={step.step} className="text-center">
-                <div className="text-4xl mb-3">{step.icon}</div>
-                <div className="text-xs font-black text-blue-700 mb-2 tracking-widest">
-                  STEP {step.step}
+            {HOW_IT_WORKS.map((step, i) => (
+              <div key={step.step} className="relative">
+                {i < HOW_IT_WORKS.length - 1 && (
+                  <div className="hidden lg:block absolute top-5 left-[calc(100%_-_1rem)] w-8 h-px bg-zinc-800 z-10" />
+                )}
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mx-auto mb-4">
+                    <span className="text-xl">{step.icon}</span>
+                  </div>
+                  <div className="text-xs font-black text-orange-500 mb-2 tracking-widest">STEP {step.step}</div>
+                  <h3 className="font-bold text-white mb-2">{step.title}</h3>
+                  <p className="text-zinc-400 text-sm leading-relaxed">{step.desc}</p>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══ FEATURES ═══════════════════════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-gray-50" aria-labelledby="features-heading">
+      {/* ══ FEATURES ════════════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-zinc-950" aria-labelledby="features-heading">
         <div className="max-w-5xl mx-auto">
-          <h2 id="features-heading" className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3">
-            Everything your team needs at the sales counter
+          <SectionLabel>Features</SectionLabel>
+          <h2 id="features-heading" className="text-3xl md:text-5xl font-black text-center text-white mb-3">
+            Everything your team needs at the counter
           </h2>
-          <p className="text-center text-gray-500 mb-14 text-lg max-w-2xl mx-auto">
+          <p className="text-center text-zinc-500 mb-16 text-lg max-w-2xl mx-auto">
             Not just a price list. A complete sales support tool built for the Indian retail floor.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {FEATURES.map((feature) => (
               <article
                 key={feature.title}
-                className={`bg-white rounded-xl border p-6 flex gap-4 hover:shadow-md transition-shadow ${
-                  feature.core ? 'border-blue-200 shadow-sm' : 'border-gray-200'
+                className={`rounded-xl border p-6 flex gap-4 transition-colors group ${
+                  feature.core
+                    ? 'bg-zinc-900 border-orange-500/20 hover:border-orange-500/40'
+                    : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
                 }`}
               >
-                <div className="text-3xl flex-shrink-0 mt-1">{feature.icon}</div>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0 mt-0.5 transition-colors ${
+                  feature.core ? 'bg-orange-500/10 group-hover:bg-orange-500/15' : 'bg-zinc-800'
+                }`}>
+                  {feature.icon}
+                </div>
                 <div>
-                  <div className="flex items-start gap-2 mb-2 flex-wrap">
-                    <h3 className="font-bold text-gray-900">{feature.title}</h3>
-                    <span
-                      className={`text-xs rounded-full px-2 py-0.5 flex-shrink-0 border ${
-                        feature.core
-                          ? 'bg-blue-50 text-blue-700 border-blue-200'
-                          : 'bg-gray-50 text-gray-600 border-gray-200'
-                      }`}
-                    >
+                  <div className="flex items-start gap-2 mb-1.5 flex-wrap">
+                    <h3 className="font-bold text-white">{feature.title}</h3>
+                    <span className={`text-xs rounded-full px-2 py-0.5 border flex-shrink-0 ${
+                      feature.core
+                        ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                        : 'bg-zinc-800 text-zinc-500 border-zinc-700'
+                    }`}>
                       {feature.highlight}
                     </span>
                   </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">{feature.desc}</p>
+                  <p className="text-zinc-400 text-sm leading-relaxed">{feature.desc}</p>
                 </div>
               </article>
             ))}
@@ -682,72 +550,58 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ══ PRICE FRESHNESS GUARANTEE ══════════════════════════════════════════ */}
-      <section
-        className="py-20 px-4 bg-gradient-to-br from-indigo-50 via-blue-50 to-white"
-        aria-labelledby="freshness-heading"
-      >
+      {/* ══ PRICE FRESHNESS ═════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-black" aria-labelledby="freshness-heading">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-indigo-100 text-indigo-700 border-indigo-300">
-              Industry First — Unique to PriceSync
-            </Badge>
-            <h2 id="freshness-heading" className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
-              The Price Freshness Guarantee
-            </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Other tools display prices. PriceSync{' '}
-              <strong>guarantees those prices are current</strong>. If they&apos;re not,
-              the catalogue is blocked — automatically.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <SectionLabel>⚡ Industry First</SectionLabel>
+          <h2 id="freshness-heading" className="text-3xl md:text-5xl font-black text-center text-white mb-3">
+            The Price Freshness Guarantee
+          </h2>
+          <p className="text-center text-zinc-400 mb-14 text-lg max-w-2xl mx-auto">
+            Other tools display prices. SalesSync <strong className="text-white">guarantees they&apos;re current</strong>. If they&apos;re not — the catalogue is blocked, automatically.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
             {FRESHNESS_STATES.map((item) => (
-              <div key={item.title} className={`rounded-xl border-2 p-6 ${item.color}`}>
-                <span className={`inline-block text-xs font-black px-3 py-1 rounded-full border mb-3 ${item.badgeColor}`}>
+              <div key={item.title} className={`rounded-xl border p-6 ${item.border} ${item.bg}`}>
+                <span className={`inline-block text-xs font-black px-3 py-1 rounded-full border mb-4 ${item.badge}`}>
                   {item.state}
                 </span>
-                <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-700 text-sm leading-relaxed">{item.desc}</p>
+                <h3 className="font-bold text-white mb-2">{item.title}</h3>
+                <p className="text-zinc-400 text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
-          <div className="bg-white border border-blue-200 rounded-2xl p-8 text-center shadow-sm">
-            <p className="text-gray-700 text-base leading-relaxed max-w-2xl mx-auto">
-              <strong className="text-blue-700">This is what makes PriceSync different.</strong>{' '}
-              Most price display tools just show data — they don&apos;t verify it&apos;s current.
-              PriceSync actively blocks staff from quoting stale prices. In Indian mobile retail
-              where a brand can change MOP by ₹1,500 with a week&apos;s notice, or where flash
-              offers expire in 24 hours, this guarantee is worth more than the subscription cost.
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
+            <p className="text-zinc-300 text-base leading-relaxed max-w-2xl mx-auto">
+              <strong className="text-orange-500">This is what makes SalesSync different.</strong> Most tools just show data — they don&apos;t verify it&apos;s current. SalesSync actively blocks staff from quoting stale prices. In Indian mobile retail where a brand can change MOP by ₹1,500 overnight, or flash offers expire in 24 hours — this guarantee is worth more than the subscription.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ══ COMPARISON TABLE ═══════════════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-white" aria-labelledby="comparison-heading">
+      {/* ══ COMPARISON ══════════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-zinc-950" aria-labelledby="comparison-heading">
         <div className="max-w-4xl mx-auto">
-          <h2 id="comparison-heading" className="text-3xl font-black text-center text-gray-900 mb-3">
-            PriceSync vs. how stores manage prices today
+          <SectionLabel>Why Switch</SectionLabel>
+          <h2 id="comparison-heading" className="text-3xl md:text-4xl font-black text-center text-white mb-3">
+            SalesSync vs. how stores manage prices today
           </h2>
-          <p className="text-center text-gray-500 mb-12 text-lg">
-            The real cost of manual price management — in sales lost and margins hit
-          </p>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+          <p className="text-center text-zinc-500 mb-12 text-lg">The real cost of manual price management</p>
+          <div className="overflow-x-auto rounded-xl border border-zinc-800">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left p-4 font-bold text-gray-700 w-1/3">What matters to you</th>
-                  <th className="text-center p-4 font-bold text-gray-500 w-1/3">Manual (WhatsApp / Printed lists / POS update)</th>
-                  <th className="text-center p-4 font-bold text-blue-700 w-1/3 bg-blue-50">With PriceSync</th>
+                <tr className="border-b border-zinc-800">
+                  <th className="text-left p-4 font-bold text-zinc-500 bg-zinc-900 w-1/3">What matters</th>
+                  <th className="text-center p-4 font-bold text-zinc-500 bg-zinc-900 w-1/3">Manual (WhatsApp / Print / POS)</th>
+                  <th className="text-center p-4 font-bold text-orange-400 bg-orange-500/5 w-1/3">With SalesSync</th>
                 </tr>
               </thead>
               <tbody>
                 {COMPARISON.map((row, i) => (
-                  <tr key={row.aspect} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
-                    <td className="p-4 font-medium text-gray-700 border-b border-gray-100">{row.aspect}</td>
-                    <td className="p-4 text-center text-gray-500 border-b border-gray-100">{row.manual}</td>
-                    <td className="p-4 text-center font-medium text-gray-800 bg-blue-50/30 border-b border-gray-100">{row.pricesync}</td>
+                  <tr key={row.aspect} className={`border-b border-zinc-800 ${i % 2 === 0 ? 'bg-black' : 'bg-zinc-950'}`}>
+                    <td className="p-4 font-medium text-zinc-300">{row.aspect}</td>
+                    <td className="p-4 text-center text-zinc-500">{row.manual}</td>
+                    <td className="p-4 text-center text-zinc-200 bg-orange-500/[0.03]">{row.pricesync}</td>
                   </tr>
                 ))}
               </tbody>
@@ -756,82 +610,74 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ══ WHO IS IT FOR ══════════════════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-gray-50" aria-labelledby="audience-heading">
+      {/* ══ WHO IT'S FOR ════════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-black" aria-labelledby="audience-heading">
         <div className="max-w-5xl mx-auto">
-          <h2 id="audience-heading" className="text-3xl font-black text-center text-gray-900 mb-3">
-            Who is PriceSync built for?
+          <SectionLabel>Who It&apos;s For</SectionLabel>
+          <h2 id="audience-heading" className="text-3xl md:text-4xl font-black text-center text-white mb-3">
+            Built for every scale of Indian retail
           </h2>
-          <p className="text-center text-gray-500 mb-12 text-lg">
-            From single-outlet shops to large franchise networks across India
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <p className="text-center text-zinc-500 mb-14 text-lg">From a single shop to a national franchise network</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               {
                 title: 'Single-Store Retailers',
                 emoji: '🏪',
-                desc: "You have one shop and 3–10 sales staff. Prices change every week. PriceSync puts the latest live catalogue on every salesperson's phone — always accurate, always accessible.",
+                desc: "One shop, 3–10 staff. Prices change every week. SalesSync puts the latest live catalogue on every salesperson's phone — always accurate.",
                 tag: 'Most common',
                 features: ['Up to 10 staff', 'One live price list', 'Counter-optimised UI'],
               },
               {
                 title: 'Multi-Branch Operators',
                 emoji: '🏢',
-                desc: 'You run 2–20 branches across a city or region. Price consistency is a daily headache. PriceSync gives every branch the same live catalogue with per-branch analytics.',
+                desc: '2–20 branches across a city or region. Price consistency is a daily headache. SalesSync gives every branch the same live catalogue with per-branch analytics.',
                 tag: 'Perfect fit',
                 features: ['Branch-level isolation', 'Consistent prices everywhere', 'Central admin control'],
               },
               {
                 title: 'Franchise & Dealer Networks',
                 emoji: '🌐',
-                desc: 'You manage a network of dealer stores or franchise outlets. PriceSync lets you push one authorised price list to all outlets simultaneously.',
+                desc: 'A network of dealer stores or franchise outlets. Push one authorised price list to all outlets simultaneously from HQ.',
                 tag: 'Enterprise-ready',
-                features: ['Unlimited branches', 'Super-admin dashboard', 'Dedicated onboarding support'],
+                features: ['Unlimited branches', 'Super-admin dashboard', 'Dedicated onboarding'],
               },
             ].map((item) => (
-              <Card key={item.title} className="border-2 border-gray-100 hover:border-blue-200 transition-colors shadow-sm">
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-1">
-                    <div className="text-4xl">{item.emoji}</div>
-                    <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">{item.tag}</Badge>
-                  </div>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 text-sm leading-relaxed mb-4">{item.desc}</p>
-                  <ul className="space-y-1.5">
-                    {item.features.map((f) => (
-                      <li key={f} className="text-xs text-gray-600 flex items-center gap-2">
-                        <span className="text-blue-500 font-bold">✓</span> {f}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+              <div key={item.title} className="bg-zinc-900 rounded-xl border border-zinc-800 hover:border-orange-500/20 p-6 transition-colors">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-xl">{item.emoji}</div>
+                  <span className="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full">{item.tag}</span>
+                </div>
+                <h3 className="font-bold text-white mb-2">{item.title}</h3>
+                <p className="text-zinc-400 text-sm leading-relaxed mb-4">{item.desc}</p>
+                <ul className="space-y-1.5">
+                  {item.features.map((f) => (
+                    <li key={f} className="text-xs text-zinc-500 flex items-center gap-2">
+                      <span className="text-orange-500 font-bold">✓</span> {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══ TESTIMONIALS ═══════════════════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-white" aria-labelledby="testimonials-heading">
+      {/* ══ TESTIMONIALS ════════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-zinc-950" aria-labelledby="testimonials-heading">
         <div className="max-w-5xl mx-auto">
-          <h2 id="testimonials-heading" className="text-3xl font-black text-center text-gray-900 mb-3">
-            What store owners &amp; managers say
+          <SectionLabel>From Store Owners</SectionLabel>
+          <h2 id="testimonials-heading" className="text-3xl md:text-4xl font-black text-center text-white mb-3">
+            What retailers across India say
           </h2>
-          <p className="text-center text-gray-500 mb-12">
-            From mobile phone stores and appliance retailers across India
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <p className="text-center text-zinc-500 mb-14">Mobile phone stores and appliance chains</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {TESTIMONIALS.map((t) => (
-              <blockquote key={t.name} className="bg-gray-50 rounded-xl border border-gray-200 p-5 flex flex-col">
-                <StarRating count={t.rating} />
-                <p className="text-gray-700 text-sm leading-relaxed mt-3 mb-4 flex-1">
-                  &ldquo;{t.text}&rdquo;
-                </p>
+              <blockquote key={t.name} className="bg-zinc-900 rounded-xl border border-zinc-800 p-5 flex flex-col">
+                <Stars />
+                <p className="text-zinc-300 text-sm leading-relaxed mt-3 mb-4 flex-1">&ldquo;{t.text}&rdquo;</p>
                 <footer>
-                  <p className="font-bold text-gray-900 text-sm">{t.name}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">{t.role}</p>
+                  <p className="font-bold text-white text-sm">{t.name}</p>
+                  <p className="text-zinc-500 text-xs mt-0.5">{t.role}</p>
                 </footer>
               </blockquote>
             ))}
@@ -839,107 +685,79 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ══ PRICING ════════════════════════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-gradient-to-b from-gray-50 to-white" aria-labelledby="pricing-heading">
+      {/* ══ PRICING ═════════════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-black" aria-labelledby="pricing-heading">
         <div className="max-w-4xl mx-auto">
-          <h2 id="pricing-heading" className="text-3xl md:text-4xl font-black text-center text-gray-900 mb-3">
-            Simple, transparent pricing
+          <SectionLabel>Pricing</SectionLabel>
+          <h2 id="pricing-heading" className="text-3xl md:text-4xl font-black text-center text-white mb-3">
+            Pay per user. No hidden fees.
           </h2>
-          <p className="text-center text-gray-500 mb-4 text-lg">
-            Pay per user. Only pay for your active team. No hidden fees. No annual lock-in.
-          </p>
-          <div className="text-center mb-12">
-            <div className="inline-block bg-yellow-50 border border-yellow-300 rounded-xl px-6 py-3 shadow-sm">
-              <p className="text-yellow-800 font-bold">
-                🎁 5-day free trial on all plans — no credit card required
-              </p>
+          <p className="text-center text-zinc-500 mb-4 text-lg">Only pay for your active team. No annual lock-in.</p>
+          <div className="flex justify-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-xl px-6 py-3">
+              <span className="text-orange-500 font-bold text-sm">🎁 5-day free trial on all plans — no credit card required</span>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             {[
               {
                 role: 'Sales Staff',
                 price: '300',
                 emoji: '🛒',
-                desc: 'For your floor sales team at the counter',
-                features: [
-                  'Full live price catalogue',
-                  'Smart search & category filters',
-                  'Bank offers & EMI details per product',
-                  'Works on any phone or tablet',
-                  'Offline cache support',
-                  'Real-time price change alerts',
-                  'Stale price auto-blocker',
-                ],
+                desc: 'For your floor sales team',
+                features: ['Full live price catalogue', 'Smart search & filters', 'Bank offers & EMI per product', 'Works on any phone or tablet', 'Offline cache support', 'Real-time price alerts', 'Stale price auto-blocker'],
                 highlight: false,
               },
               {
                 role: 'Store Manager',
                 price: '500',
                 emoji: '👔',
-                desc: 'For branch managers & supervisors',
-                features: [
-                  'Everything in Sales Staff',
-                  'Team activity overview',
-                  'Staff engagement analytics',
-                  'Active session monitoring',
-                  'Price freshness status dashboard',
-                  'Performance reports',
-                  'Priority support',
-                ],
+                desc: 'For branch managers',
+                features: ['Everything in Sales Staff', 'Team activity overview', 'Staff analytics', 'Session monitoring', 'Price freshness dashboard', 'Performance reports', 'Priority support'],
                 highlight: true,
               },
               {
                 role: 'Admin / Owner',
                 price: '700',
                 emoji: '👑',
-                desc: 'For store owners & head office',
-                features: [
-                  'Everything in Store Manager',
-                  'Full admin control panel',
-                  'Add / remove staff accounts',
-                  'Instant manual price sync trigger',
-                  'Role & password management',
-                  'Multi-branch oversight',
-                  'Full audit logs',
-                ],
+                desc: 'For owners & head office',
+                features: ['Everything in Manager', 'Full admin panel', 'Add / remove accounts', 'Instant manual sync', 'Role & password management', 'Multi-branch oversight', 'Full audit logs'],
                 highlight: false,
               },
             ].map((plan) => (
               <div
                 key={plan.role}
-                className={`rounded-2xl border-2 p-6 flex flex-col ${
+                className={`rounded-2xl border p-6 flex flex-col transition-all ${
                   plan.highlight
-                    ? 'border-blue-600 shadow-xl bg-blue-50'
-                    : 'border-gray-200 bg-white shadow-sm'
+                    ? 'border-orange-500 bg-zinc-900 shadow-[0_0_40px_rgba(249,115,22,0.08)]'
+                    : 'border-zinc-800 bg-zinc-900'
                 }`}
               >
                 {plan.highlight && (
                   <div className="text-center mb-3">
-                    <Badge className="bg-blue-600 text-white border-0">Most Popular</Badge>
+                    <span className="text-xs bg-orange-500 text-black font-black px-3 py-1 rounded-full">Most Popular</span>
                   </div>
                 )}
-                <div className="text-3xl mb-2">{plan.emoji}</div>
-                <h3 className="text-xl font-bold text-gray-900">{plan.role}</h3>
-                <p className="text-gray-500 text-sm mb-4">{plan.desc}</p>
+                <div className="text-2xl mb-2">{plan.emoji}</div>
+                <h3 className="text-xl font-black text-white">{plan.role}</h3>
+                <p className="text-zinc-500 text-sm mb-4">{plan.desc}</p>
                 <div className="mb-6">
-                  <span className="text-4xl font-black text-gray-900">₹{plan.price}</span>
-                  <span className="text-gray-500 text-sm"> / user / month</span>
+                  <span className="text-4xl font-black text-white">₹{plan.price}</span>
+                  <span className="text-zinc-500 text-sm"> / user / month</span>
                 </div>
                 <ul className="space-y-2.5 flex-1 mb-6">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span className="text-green-500 font-bold mt-0.5 flex-shrink-0">✓</span>
-                      {f}
+                    <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
+                      <span className="text-orange-500 font-bold mt-0.5 flex-shrink-0">✓</span> {f}
                     </li>
                   ))}
                 </ul>
                 <Button
                   onClick={scrollToForm}
-                  className={`w-full font-semibold py-5 ${
+                  className={`w-full font-bold py-5 ${
                     plan.highlight
-                      ? 'bg-blue-700 hover:bg-blue-800 text-white'
-                      : 'bg-gray-900 hover:bg-gray-800 text-white'
+                      ? 'bg-orange-500 hover:bg-orange-400 text-black shadow-lg shadow-orange-500/20'
+                      : 'bg-zinc-800 hover:bg-zinc-700 text-white'
                   }`}
                 >
                   Start 5-Day Free Trial
@@ -947,39 +765,38 @@ function LandingPage() {
               </div>
             ))}
           </div>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 text-center">
-            <p className="text-gray-700 text-sm leading-relaxed">
-              <strong>Real example:</strong> A store with 6 Sales staff + 1 Manager + 1 Admin
-              = <strong>₹{6 * 300 + 500 + 700}/month</strong> — less than the cost of weekly
-              price list printing, and far less than the margin lost to a single wrong quote on a
-              flagship phone.
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 text-center">
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              <strong className="text-white">Real example:</strong> 6 Sales + 1 Manager + 1 Admin ={' '}
+              <strong className="text-orange-400">₹{6 * 300 + 500 + 700}/month</strong> — less than printing weekly price lists, and far less than one wrong quote on a flagship phone.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ══ FAQ ════════════════════════════════════════════════════════════════ */}
-      <section className="py-20 px-4 bg-white" aria-labelledby="faq-heading">
+      {/* ══ FAQ ═════════════════════════════════════════════════════════════════ */}
+      <section className="py-24 px-4 bg-zinc-950" aria-labelledby="faq-heading">
         <div className="max-w-3xl mx-auto">
-          <h2 id="faq-heading" className="text-3xl font-black text-center text-gray-900 mb-12">
+          <SectionLabel>FAQ</SectionLabel>
+          <h2 id="faq-heading" className="text-3xl font-black text-center text-white mb-12">
             Frequently asked questions
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {FAQS.map((faq, i) => (
-              <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
+              <div key={i} className="border border-zinc-800 rounded-xl overflow-hidden">
                 <button
-                  className="w-full text-left px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors"
+                  className="w-full text-left px-6 py-4 flex items-center justify-between gap-4 hover:bg-zinc-900 transition-colors bg-zinc-950"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
                 >
-                  <span className="font-semibold text-gray-900 text-sm md:text-base">{faq.q}</span>
-                  <span className="text-gray-400 flex-shrink-0 text-xl font-light">
+                  <span className="font-semibold text-white text-sm md:text-base">{faq.q}</span>
+                  <span className={`flex-shrink-0 text-lg font-light transition-colors ${openFaq === i ? 'text-orange-500' : 'text-zinc-600'}`}>
                     {openFaq === i ? '−' : '+'}
                   </span>
                 </button>
                 {openFaq === i && (
-                  <div className="px-6 pb-5">
-                    <p className="text-gray-600 text-sm leading-relaxed">{faq.a}</p>
+                  <div className="px-6 pb-5 bg-zinc-950">
+                    <p className="text-zinc-400 text-sm leading-relaxed">{faq.a}</p>
                   </div>
                 )}
               </div>
@@ -988,234 +805,185 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* ══ FINAL CTA ══════════════════════════════════════════════════════════ */}
-      <section className="py-16 px-4 bg-gradient-to-r from-blue-700 to-indigo-800 text-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-black mb-4">
-            Your competitors are still updating prices manually.
+      {/* ══ FINAL CTA ═══════════════════════════════════════════════════════════ */}
+      <section className="relative py-20 px-4 bg-black overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(249,115,22,0.08), transparent 70%)' }} />
+        <div className="relative max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
+            Your competitors are still
+            <br />
+            <span className="text-zinc-500">updating prices manually.</span>
           </h2>
-          <p className="text-blue-100 text-lg mb-8 leading-relaxed">
-            Give your staff the most accurate, fastest price catalogue in your market — and
-            never lose a sale to a wrong quote again.
+          <p className="text-zinc-400 text-lg mb-10 leading-relaxed">
+            Give your staff the most accurate, fastest price catalogue in your market — and never lose a sale to a wrong quote again.
           </p>
           <Button
             size="lg"
             onClick={scrollToForm}
-            className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-black text-lg px-10 py-7 rounded-xl shadow-lg transition-transform hover:scale-105"
+            className="bg-orange-500 hover:bg-orange-400 text-black font-black text-lg px-10 py-7 rounded-xl shadow-2xl shadow-orange-500/25 transition-all hover:scale-105"
           >
             Start Your Free Trial Today →
           </Button>
-          <p className="text-blue-300 mt-4 text-sm">
-            5 days free · No credit card · Setup in 10 minutes · Cancel anytime
-          </p>
+          <p className="text-zinc-600 mt-4 text-sm">5 days free · No credit card · Setup in 10 minutes · Cancel anytime</p>
         </div>
       </section>
 
-      {/* ══ REGISTRATION FORM ══════════════════════════════════════════════════ */}
-      <section
-        id="register"
-        ref={formRef}
-        className="py-20 px-4 bg-gradient-to-br from-gray-900 to-blue-950"
-        aria-labelledby="register-heading"
-      >
+      {/* ══ REGISTRATION FORM ═══════════════════════════════════════════════════ */}
+      <section id="register" ref={formRef} className="py-24 px-4 bg-zinc-950 border-t border-zinc-800" aria-labelledby="register-heading">
         <div className="max-w-lg mx-auto">
           <div className="text-center mb-8">
+            <LogoMark className="justify-center mb-4" />
             <h2 id="register-heading" className="text-3xl font-black text-white mb-2">
               Start your 5-day free trial
             </h2>
-            <p className="text-blue-300">
-              Your store is live in 2 minutes. No credit card needed.
-            </p>
+            <p className="text-zinc-500">Your store is live in 2 minutes. No credit card needed.</p>
           </div>
-          <Card className="shadow-2xl border-0">
-            <CardContent className="pt-6">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-1">
-                  <Label htmlFor="storeName" className="font-semibold">
-                    Store Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="storeName"
-                    name="storeName"
-                    placeholder="e.g. Sharma Mobile Store"
-                    value={formData.storeName}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                    className="h-11"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Your private store URL:{' '}
-                    <strong className="text-blue-700 break-all">
-                      {storeSlugPreview}.{ROOT_DOMAIN}
-                    </strong>
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="adminName" className="font-semibold">
-                      Your Name <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="adminName"
-                      name="adminName"
-                      placeholder="Rajesh Sharma"
-                      value={formData.adminName}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="phone" className="font-semibold">Phone</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      disabled={loading}
-                      className="h-11"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="email" className="font-semibold">
-                    Work Email <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="owner@yourstore.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="password" className="font-semibold">
-                    Password <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="Minimum 8 characters"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    minLength={8}
-                    disabled={loading}
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="googleSheetId" className="font-semibold">
-                    Google Sheet ID{' '}
-                    <span className="text-gray-400 font-normal text-xs">
-                      (optional — add later in Settings)
-                    </span>
-                  </Label>
-                  <Input
-                    id="googleSheetId"
-                    name="googleSheetId"
-                    placeholder="Paste your spreadsheet ID here"
-                    value={formData.googleSheetId}
-                    onChange={handleChange}
-                    disabled={loading}
-                    className="h-11"
-                  />
-                  <p className="text-xs text-gray-500">
-                    From the URL: docs.google.com/spreadsheets/d/<strong>[THIS PART]</strong>/edit
-                  </p>
-                </div>
-                {error && (
-                  <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
-                    {error}
-                  </div>
-                )}
-                <Button
-                  type="submit"
-                  className="w-full bg-blue-700 hover:bg-blue-800 font-black text-base py-6"
-                  disabled={loading}
-                >
-                  {loading ? 'Creating your store...' : 'Create My Store — Start Free Trial →'}
-                </Button>
-                <p className="text-xs text-center text-gray-500">
-                  By registering you agree to our terms of use. No credit card required for the
-                  5-day trial. Cancel anytime.
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="storeName" className="text-zinc-300 font-semibold text-sm">
+                  Store Name <span className="text-orange-500">*</span>
+                </Label>
+                <Input
+                  id="storeName" name="storeName"
+                  placeholder="e.g. Sharma Mobile Store"
+                  value={formData.storeName} onChange={handleChange}
+                  required disabled={loading}
+                  className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                />
+                <p className="text-xs text-zinc-600">
+                  Your URL: <strong className="text-orange-500">{storeSlugPreview}.{ROOT_DOMAIN}</strong>
                 </p>
-              </form>
-            </CardContent>
-          </Card>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="adminName" className="text-zinc-300 font-semibold text-sm">
+                    Your Name <span className="text-orange-500">*</span>
+                  </Label>
+                  <Input
+                    id="adminName" name="adminName"
+                    placeholder="Rajesh Sharma"
+                    value={formData.adminName} onChange={handleChange}
+                    required disabled={loading}
+                    className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-zinc-300 font-semibold text-sm">Phone</Label>
+                  <Input
+                    id="phone" name="phone" type="tel"
+                    placeholder="+91 98765 43210"
+                    value={formData.phone} onChange={handleChange}
+                    disabled={loading}
+                    className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-zinc-300 font-semibold text-sm">
+                  Work Email <span className="text-orange-500">*</span>
+                </Label>
+                <Input
+                  id="email" name="email" type="email"
+                  placeholder="owner@yourstore.com"
+                  value={formData.email} onChange={handleChange}
+                  required disabled={loading}
+                  className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-zinc-300 font-semibold text-sm">
+                  Password <span className="text-orange-500">*</span>
+                </Label>
+                <Input
+                  id="password" name="password" type="password"
+                  placeholder="Minimum 8 characters"
+                  value={formData.password} onChange={handleChange}
+                  required minLength={8} disabled={loading}
+                  className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="googleSheetId" className="text-zinc-300 font-semibold text-sm">
+                  Google Sheet ID{' '}
+                  <span className="text-zinc-600 font-normal text-xs">(optional — add later)</span>
+                </Label>
+                <Input
+                  id="googleSheetId" name="googleSheetId"
+                  placeholder="Paste your spreadsheet ID here"
+                  value={formData.googleSheetId} onChange={handleChange}
+                  disabled={loading}
+                  className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
+                />
+                <p className="text-xs text-zinc-600">
+                  From the URL: docs.google.com/spreadsheets/d/<strong className="text-zinc-500">[THIS PART]</strong>/edit
+                </p>
+              </div>
+              {error && (
+                <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">{error}</div>
+              )}
+              <Button
+                type="submit"
+                className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black text-base py-6 shadow-lg shadow-orange-500/20"
+                disabled={loading}
+              >
+                {loading ? 'Creating your store...' : 'Create My Store — Start Free Trial →'}
+              </Button>
+              <p className="text-xs text-center text-zinc-600">
+                By registering you agree to our terms. No credit card for the 5-day trial. Cancel anytime.
+              </p>
+            </form>
+          </div>
         </div>
       </section>
 
-      {/* ══ FOOTER ═════════════════════════════════════════════════════════════ */}
-      <footer className="py-14 px-4 bg-gray-950 text-gray-400">
+      {/* ══ FOOTER ══════════════════════════════════════════════════════════════ */}
+      <footer className="py-14 px-4 bg-black border-t border-zinc-900">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
             <div className="md:col-span-1">
-              <div className="text-2xl font-black text-white mb-2">PriceSync</div>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Real-time price management and sales support system for mobile phone and appliance
-                retailers across India.
+              <LogoMark className="mb-3" />
+              <p className="text-sm text-zinc-600 leading-relaxed">
+                Real-time price management for mobile phone and appliance retailers across India.
               </p>
-              <p className="text-xs text-gray-600 mt-3">A product by Deda Systems</p>
+              <p className="text-xs text-zinc-700 mt-3">
+                A product by{' '}
+                <a href="https://deda.systems" className="text-zinc-500 hover:text-orange-500 transition-colors">
+                  Deda Systems
+                </a>
+              </p>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-3 text-sm">Features</h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>Live Google Sheets Sync</li>
-                <li>Stale Price Blocker</li>
-                <li>Multi-Branch Support</li>
-                <li>Role-Based Access</li>
-                <li>Staff Analytics</li>
-                <li>Offline Support</li>
+              <h3 className="text-zinc-300 font-semibold mb-3 text-sm">Product</h3>
+              <ul className="space-y-2 text-sm text-zinc-600">
+                {['Live Google Sheets Sync', 'Stale Price Blocker', 'Multi-Branch Support', 'Role-Based Access', 'Staff Analytics', 'Offline Support'].map(f => (
+                  <li key={f}>{f}</li>
+                ))}
               </ul>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-3 text-sm">Built For</h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>Mobile Phone Stores</li>
-                <li>Appliance Retailers</li>
-                <li>Multi-Branch Chains</li>
-                <li>Franchise Networks</li>
-                <li>Exclusive Brand Outlets</li>
-                <li>Dealer Networks</li>
+              <h3 className="text-zinc-300 font-semibold mb-3 text-sm">Built For</h3>
+              <ul className="space-y-2 text-sm text-zinc-600">
+                {['Mobile Phone Stores', 'Appliance Retailers', 'Multi-Branch Chains', 'Franchise Networks', 'Exclusive Brand Outlets', 'Dealer Networks'].map(f => (
+                  <li key={f}>{f}</li>
+                ))}
               </ul>
             </div>
             <div>
-              <h3 className="text-white font-semibold mb-3 text-sm">Pricing</h3>
-              <ul className="space-y-2 text-sm text-gray-500">
-                <li>Sales Staff — ₹300 / user / month</li>
-                <li>Store Manager — ₹500 / user / month</li>
-                <li>Admin / Owner — ₹700 / user / month</li>
-                <li className="text-green-400 font-semibold pt-1">
-                  ✓ 5-day free trial — all plans
-                </li>
+              <h3 className="text-zinc-300 font-semibold mb-3 text-sm">Pricing</h3>
+              <ul className="space-y-2 text-sm text-zinc-600">
+                <li>Sales Staff — ₹300 / user / mo</li>
+                <li>Store Manager — ₹500 / user / mo</li>
+                <li>Admin / Owner — ₹700 / user / mo</li>
+                <li className="text-orange-500 font-semibold pt-1">✓ 5-day free trial</li>
               </ul>
-              <div className="mt-4">
-                <Button
-                  size="sm"
-                  onClick={scrollToForm}
-                  className="bg-blue-700 hover:bg-blue-800 text-white text-xs"
-                >
-                  Start Free Trial
-                </Button>
-              </div>
+              <Button size="sm" onClick={scrollToForm} className="mt-4 bg-orange-500 hover:bg-orange-400 text-black font-bold text-xs">
+                Start Free Trial
+              </Button>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-gray-600">
-            <p>
-              © {new Date().getFullYear()} Deda Systems. PriceSync — built for mobile phone
-              and appliance retailers in India.
-            </p>
+          <div className="border-t border-zinc-900 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-zinc-700">
+            <p>© {new Date().getFullYear()} Deda Systems. SalesSync — built for mobile phone and appliance retailers in India.</p>
             <p>Billing via Razorpay · Hosted on Railway · Data stored in India</p>
           </div>
         </div>
@@ -1243,12 +1011,7 @@ function LoginPage({ tenantSlug }: { tenantSlug: string }) {
     setError('');
     setLoading(true);
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        tenantSlug,
-        redirect: false,
-      });
+      const result = await signIn('credentials', { email, password, tenantSlug, redirect: false });
       if (result?.error) setError(result.error);
     } catch {
       setError('An unexpected error occurred');
@@ -1259,65 +1022,64 @@ function LoginPage({ tenantSlug }: { tenantSlug: string }) {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-gray-500">Loading…</div>
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md shadow-xl border-0">
-        <CardHeader className="text-center pb-2">
-          <div className="text-3xl font-black text-blue-700 mb-1">PriceSync</div>
-          <CardTitle className="text-xl font-bold text-gray-900">Welcome back</CardTitle>
-          <CardDescription>
-            Sign in to <strong className="text-blue-700">{tenantSlug}</strong>
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="flex items-center justify-center min-h-screen bg-black p-4">
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(249,115,22,0.06), transparent 60%)' }} />
+      <div className="relative w-full max-w-md">
+        <div className="text-center mb-8">
+          <LogoMark className="justify-center mb-3" />
+          <p className="text-zinc-500 text-sm">
+            Signing in to{' '}
+            <span className="text-orange-500 font-semibold">{tenantSlug}</span>
+          </p>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="email" className="font-semibold">Email</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-zinc-300 font-semibold text-sm">Email</Label>
               <Input
-                id="email"
-                type="email"
+                id="email" type="email"
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-                className="h-11"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                required disabled={loading}
+                className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="password" className="font-semibold">Password</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-zinc-300 font-semibold text-sm">Password</Label>
               <Input
-                id="password"
-                type="password"
+                id="password" type="password"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="h-11"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                required disabled={loading}
+                className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
               />
             </div>
             {error && (
-              <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
-                {error}
-              </div>
+              <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">{error}</div>
             )}
             <Button
               type="submit"
-              className="w-full bg-blue-700 hover:bg-blue-800 font-black py-6 text-base"
+              className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black py-6 text-base shadow-lg shadow-orange-500/20"
               disabled={loading}
             >
               {loading ? 'Signing in…' : 'Sign In'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+        <p className="text-center text-xs text-zinc-700 mt-4">
+          Powered by{' '}
+          <a href="https://deda.systems" className="text-zinc-600 hover:text-orange-500 transition-colors">
+            Deda Systems
+          </a>
+        </p>
+      </div>
     </div>
   );
 }
@@ -1327,14 +1089,12 @@ function LoginPage({ tenantSlug }: { tenantSlug: string }) {
 export default function RootPage() {
   const [tenantSlug, setTenantSlug] = useState<string | null>(null);
 
-  useEffect(() => {
-    setTenantSlug(getTenantSlug());
-  }, []);
+  useEffect(() => { setTenantSlug(getTenantSlug()); }, []);
 
   if (tenantSlug === null) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="text-gray-400 text-sm">Loading…</div>
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
