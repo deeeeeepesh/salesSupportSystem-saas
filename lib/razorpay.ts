@@ -1,10 +1,17 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
-export const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+// Lazy-initialize so the build doesn't fail when env vars are absent
+let _razorpay: Razorpay | null = null;
+function getRazorpay(): Razorpay {
+  if (!_razorpay) {
+    _razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+  }
+  return _razorpay;
+}
 
 // Seat prices in paise (INR)
 export const SEAT_PRICES = {
@@ -45,7 +52,7 @@ export async function createRazorpayCustomer(params: {
   email: string;
   contact?: string;
 }) {
-  return razorpay.customers.create(params);
+  return getRazorpay().customers.create(params);
 }
 
 export async function createRazorpaySubscription(params: {
@@ -56,12 +63,13 @@ export async function createRazorpaySubscription(params: {
   startAt?: number;
   notes?: Record<string, string>;
 }) {
-  return razorpay.subscriptions.create({
+  const rzp = getRazorpay();
+  return rzp.subscriptions.create({
     plan_id: params.planId,
     customer_notify: 1,
     quantity: params.quantity || 1,
-    total_count: params.totalCount || 120, // 10 years
+    total_count: params.totalCount || 120,
     start_at: params.startAt,
     notes: params.notes,
-  } as Parameters<typeof razorpay.subscriptions.create>[0]);
+  } as Parameters<typeof rzp.subscriptions.create>[0]);
 }
