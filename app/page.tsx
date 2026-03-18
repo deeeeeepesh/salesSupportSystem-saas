@@ -894,7 +894,18 @@ function LoginPage({ tenantSlug }: { tenantSlug: string }) {
               />
             </div>
             {error && (
-              <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">{error}</div>
+              <div className={`p-3 text-sm rounded-lg border ${
+                error.includes('trial has ended')
+                  ? 'text-orange-300 bg-orange-500/10 border-orange-500/20'
+                  : 'text-red-400 bg-red-500/10 border-red-500/20'
+              }`}>
+                {error}
+                {error.includes('trial has ended') && (
+                  <div className="mt-2">
+                    <a href="/" className="text-orange-400 underline font-semibold text-xs">Subscribe to continue →</a>
+                  </div>
+                )}
+              </div>
             )}
             <Button
               type="submit"
