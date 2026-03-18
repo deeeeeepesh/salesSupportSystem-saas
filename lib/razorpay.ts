@@ -47,12 +47,62 @@ export function verifyWebhookSignature(
   );
 }
 
-export async function createRazorpayCustomer(params: {
-  name: string;
-  email: string;
-  contact?: string;
-}) {
-  return getRazorpay().customers.create(params);
+// ─── Pricing model constants (paise) ────────────────────────────────────────
+const PRICE_STORE_BASE = 200000;
+const PRICE_EXTRA_STAFF = 20000;
+const PRICE_EXTRA_MANAGER = 50000;
+const PRICE_EXTRA_ADMIN = 70000;
+
+/**
+ * Calculate the monthly subscription amount in paise.
+ * - Base: ₹2,000 for 1 store (includes 1 admin + 1 manager + 4 staff)
+ * - Each extra branch: ₹2,000 (includes 1 manager + 4 staff per branch)
+ * - Extra admins beyond 1: ₹700 each
+ * - Extra managers beyond branchCount: ₹500 each
+ * - Extra staff beyond branchCount×4: ₹200 each
+ */
+export function calcMonthlyAmount(
+  adminSeats: number,
+  managerSeats: number,
+  salesSeats: number,
+  branchCount: number
+): number {
+  const baseCost = PRICE_STORE_BASE;
+  const extraBranchCost = Math.max(0, branchCount - 1) * PRICE_STORE_BASE;
+  const includedManagers = branchCount;
+  const includedStaff = branchCount * 4;
+  const extraAdmins = Math.max(0, adminSeats - 1);
+  const extraManagers = Math.max(0, managerSeats - includedManagers);
+  const extraStaff = Math.max(0, salesSeats - includedStaff);
+  return baseCost + extraBranchCost
+    + extraAdmins * PRICE_EXTRA_ADMIN
+    + extraManagers * PRICE_EXTRA_MANAGER
+    + extraStaff * PRICE_EXTRA_STAFF;
+}
+
+/**
+ * Create a Razorpay order for a one-time payment (e.g. first month subscription).
+ */
+export async function createRazorpayOrder(amountPaise: number, tenantSlug: string) {
+  const order = await getRazorpay().orders.create({
+    amount: amountPaise,
+    currency: 'INR',
+    receipt: `sub_${tenantSlug}_${Date.now()}`,
+    notes: { tenantSlug },
+  });
+  return order;
+}
+
+/**
+ * Create or look up a Razorpay customer.
+ */
+export async function createRazorpayCustomer(name: string, email: string, phone?: string) {
+  const customer = await getRazorpay().customers.create({
+    name,
+    email,
+    contact: phone || '',
+  });
+  return customer;
 }
 
 export async function createRazorpaySubscription(params: {
