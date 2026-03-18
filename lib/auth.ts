@@ -28,7 +28,7 @@ export const authOptions: NextAuthOptions = {
 
         const tenant = await prisma.tenant.findUnique({
           where: { slug: tenantSlug },
-          select: { id: true, status: true },
+          select: { id: true, status: true, trialEndsAt: true },
         });
 
         if (!tenant) {
@@ -41,6 +41,10 @@ export const authOptions: NextAuthOptions = {
 
         if (tenant.status === 'CANCELLED') {
           throw new Error('Store subscription has been cancelled.');
+        }
+
+        if (tenant.status === 'TRIAL' && tenant.trialEndsAt && tenant.trialEndsAt < new Date()) {
+          throw new Error('Your 5-day free trial has ended. Please subscribe to continue at salessync.dedasystems.com');
         }
 
         const user = await prisma.user.findUnique({
@@ -101,11 +105,15 @@ export const authOptions: NextAuthOptions = {
             // Also check tenant status
             const tenant = await prisma.tenant.findUnique({
               where: { id: dbUser.tenantId },
-              select: { status: true },
+              select: { status: true, trialEndsAt: true },
             });
 
             if (!tenant || tenant.status === 'SUSPENDED' || tenant.status === 'CANCELLED') {
               throw new Error('Session invalidated: store suspended');
+            }
+
+            if (tenant.status === 'TRIAL' && tenant.trialEndsAt && tenant.trialEndsAt < new Date()) {
+              throw new Error('Session invalidated: trial expired');
             }
 
             if (token.role !== dbUser.role) {
