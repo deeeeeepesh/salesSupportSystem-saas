@@ -175,7 +175,7 @@ const FAQS = [
   },
   {
     q: 'What happens after the 5-day trial?',
-    a: "After the trial, you'll be prompted to add a payment method via Razorpay. Billing is per user per month — ₹300 for Sales, ₹500 for Managers, ₹700 for Admins. No long-term contracts. Cancel anytime.",
+    a: "After the trial, you'll be prompted to add a payment method via Razorpay. Each store costs ₹2,000/month and includes 1 Admin, 1 Manager, and 4 Staff seats. Need more? Add extra seats: ₹200/staff, ₹500/manager, ₹700/admin. Additional branches cost ₹2,000/month each and come with 1 Manager and 4 Staff seats included. No long-term contracts. Cancel anytime.",
   },
   {
     q: 'We also sell appliances, not just phones. Does it work?',
@@ -562,88 +562,66 @@ function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-orange-500 text-sm font-bold uppercase tracking-widest mb-3">Pricing</p>
-            <h2 className={`text-3xl md:text-4xl font-black mb-3 ${textPrimary}`}>Simple, transparent pricing</h2>
-            <p className={`text-lg mb-2 ${textSecondary}`}>Pay per user. Only pay for your active team. No hidden fees.</p>
+            <h2 className={`text-3xl md:text-4xl font-black mb-3 ${textPrimary}`}>Simple, store-based pricing</h2>
+            <p className={`text-lg mb-2 ${textSecondary}`}>One flat price per store. Everything included. Scale as you grow.</p>
             <p className="text-orange-500 font-semibold">5-day free trial — no credit card required</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {[
-              {
-                Icon: ShoppingCart,
-                role: 'Sales',
-                price: '300',
-                desc: 'For your floor sales staff',
-                features: ['Full live price catalogue', 'Search & filter all products', 'Bank offers & exchange details', 'Works on any phone or tablet', 'Real-time price change alerts'],
-                highlight: false,
-              },
-              {
-                Icon: Briefcase,
-                role: 'Store Manager',
-                price: '500',
-                desc: 'For branch managers & supervisors',
-                features: ['Everything in Sales', 'Team activity overview', 'Staff engagement analytics', 'Session monitoring', 'Price freshness visibility', 'Priority support'],
-                highlight: true,
-              },
-              {
-                Icon: Crown,
-                role: 'Admin',
-                price: '700',
-                desc: 'For store owners & head office',
-                features: ['Everything in Manager', 'Full admin control panel', 'Add / disable staff accounts', 'Manual price sync trigger', 'Full user analytics', 'Password & role management'],
-                highlight: false,
-              },
-            ].map((plan) => (
-              <div
-                key={plan.role}
-                className={`rounded-2xl border-2 p-6 flex flex-col relative ${
-                  plan.highlight
-                    ? 'border-orange-500 bg-orange-500/5'
-                    : isDark
-                    ? 'border-zinc-800 bg-zinc-900'
-                    : 'border-gray-200 bg-white'
-                }`}
-              >
-                {plan.highlight && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="bg-orange-500 text-black text-xs font-black px-3 py-1 rounded-full">Most Popular</span>
+
+          {/* Main plan card */}
+          <div className={`rounded-2xl border-2 border-orange-500 p-8 mb-6 bg-orange-500/5 text-center`}>
+            <span className="bg-orange-500 text-black text-xs font-black px-3 py-1 rounded-full">Per Store / Branch</span>
+            <div className="mt-6 mb-2">
+              <span className={`text-6xl font-black ${textPrimary}`}>₹2,000</span>
+              <span className={`text-lg ${textMuted}`}> / store / month</span>
+            </div>
+            <p className={`mb-8 ${textSecondary}`}>Everything your store needs, out of the box.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-left">
+              {[
+                { Icon: Crown, label: '1 Admin seat', sub: 'Full control panel' },
+                { Icon: Briefcase, label: '1 Manager seat', sub: 'Team analytics' },
+                { Icon: ShoppingCart, label: '4 Staff seats', sub: 'Live price catalogue' },
+              ].map(({ Icon, label, sub }) => (
+                <div key={label} className={`rounded-xl p-4 border ${cardBg}`}>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${iconBox}`}>
+                    <Icon className="w-4 h-4 text-orange-500" />
                   </div>
-                )}
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${iconBox}`}>
-                  <plan.Icon className="w-5 h-5 text-orange-500" />
+                  <p className={`font-bold text-sm ${textPrimary}`}>{label}</p>
+                  <p className={`text-xs ${textMuted}`}>{sub}</p>
                 </div>
-                <h3 className={`text-xl font-bold ${textPrimary}`}>{plan.role}</h3>
-                <p className={`text-sm mb-4 ${textMuted}`}>{plan.desc}</p>
-                <div className="mb-6">
-                  <span className={`text-4xl font-black ${textPrimary}`}>₹{plan.price}</span>
-                  <span className={`text-sm ${textMuted}`}> / user / month</span>
-                </div>
-                <ul className="space-y-2 flex-1 mb-6">
-                  {plan.features.map((f) => (
-                    <li key={f} className={`flex items-start gap-2 text-sm ${textSecondary}`}>
-                      <CheckCircle2 className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  onClick={scrollToForm}
-                  className={`w-full font-semibold ${
-                    plan.highlight
-                      ? 'bg-orange-500 hover:bg-orange-400 text-black'
-                      : isDark
-                      ? 'bg-zinc-700 hover:bg-zinc-600 text-white'
-                      : 'bg-gray-900 hover:bg-gray-800 text-white'
-                  }`}
-                >
-                  Start Free Trial
-                </Button>
-              </div>
-            ))}
+              ))}
+            </div>
+            <Button
+              size="lg"
+              onClick={scrollToForm}
+              className="bg-orange-500 hover:bg-orange-400 text-black font-black px-12 py-6 text-lg"
+            >
+              Start Free Trial
+            </Button>
           </div>
+
+          {/* Add-ons */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div className={`rounded-xl border p-6 ${cardBg}`}>
+              <h4 className={`font-bold mb-4 ${textPrimary}`}>Extra Seats</h4>
+              <ul className={`space-y-3 text-sm ${textSecondary}`}>
+                <li className="flex justify-between"><span>Additional Staff seat</span><span className={`font-bold ${textPrimary}`}>₹200/month</span></li>
+                <li className="flex justify-between"><span>Additional Manager seat</span><span className={`font-bold ${textPrimary}`}>₹500/month</span></li>
+                <li className="flex justify-between"><span>Additional Admin seat</span><span className={`font-bold ${textPrimary}`}>₹700/month</span></li>
+              </ul>
+            </div>
+            <div className={`rounded-xl border p-6 ${cardBg}`}>
+              <h4 className={`font-bold mb-4 ${textPrimary}`}>Additional Branches</h4>
+              <div className="flex justify-between items-start mb-3">
+                <span className={`text-sm ${textSecondary}`}>Each extra branch</span>
+                <span className={`font-bold ${textPrimary}`}>₹2,000/month</span>
+              </div>
+              <p className={`text-xs ${textMuted}`}>Includes 1 Manager + 4 Staff seats per branch. Add as many branches as you need.</p>
+            </div>
+          </div>
+
           <div className={`rounded-xl p-5 text-center border ${cardBg}`}>
             <p className={`text-sm ${textSecondary}`}>
-              <strong className={textPrimary}>Example:</strong> A store with 6 Sales + 1 Manager + 1 Admin = ₹{(6 * 300) + 500 + 700}/month.
-              Less than what you spend on printing price lists and lost margins from wrong quotes.
+              <strong className={textPrimary}>Example:</strong> 3 branches with default seats = ₹6,000/month. Add 2 extra staff across all branches = ₹6,400/month total. No long-term contracts.
             </p>
           </div>
         </div>
@@ -810,9 +788,10 @@ function LandingPage() {
             <div>
               <h4 className={`font-semibold mb-3 ${textPrimary}`}>Pricing</h4>
               <ul className={`space-y-2 text-sm ${textMuted}`}>
-                <li>Sales Staff — ₹300/user/month</li>
-                <li>Store Manager — ₹500/user/month</li>
-                <li>Admin — ₹700/user/month</li>
+                <li>₹2,000/store/month — includes 1 Admin, 1 Manager, 4 Staff</li>
+                <li>Extra staff — ₹200/seat/month</li>
+                <li>Extra manager — ₹500/seat/month</li>
+                <li>Extra admin — ₹700/seat/month</li>
                 <li className="text-orange-500 font-semibold">5-day free trial on all plans</li>
               </ul>
               <div className="mt-4">
