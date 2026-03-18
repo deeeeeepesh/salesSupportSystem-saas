@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Zap, Search, Building2, Bell, Users, BarChart2, WifiOff, Shield,
+  Zap, Search, Building2, Bell, Users, BarChart2, Shield,
   MapPin, Tag, RefreshCw, Package, FileText, Smartphone,
   ShoppingCart, Briefcase, Crown, Sun, Moon, Store, Globe,
   CheckCircle2, ChevronDown, ChevronUp,
@@ -65,17 +65,17 @@ const PAIN_POINTS = [
   {
     Icon: Store,
     title: 'Multi-branch consistency is a nightmare',
-    desc: "You run 3 stores across the city. Each manager maintains their own list. The same Samsung A55 has three different prices across your branches on the same day.",
+    desc: "You run multiple stores across the city. Each manager maintains their own list. The same Samsung A55 has three different prices across your branches on the same day.",
   },
   {
     Icon: Tag,
     title: 'Bank offers and exchange deals change weekly',
-    desc: "HDFC has \u20b93,000 cashback this weekend. ICICI has EMI offers. Exchange values change. Your staff either doesn't know or takes 5 minutes to find out — the customer walks.",
+    desc: "HDFC has ₹3,000 cashback this weekend. ICICI has EMI offers. Exchange values change. Your staff either doesn't know or takes 5 minutes to find out — the customer walks.",
   },
   {
     Icon: RefreshCw,
     title: 'POS price update is a slow operational task',
-    desc: 'Updating the POS with the new price list takes your manager 2\u20133 hours every week \u2014 on launch days, the entire system needs an update while the store is open.',
+    desc: 'Updating the POS with the new price list takes your manager 2–3 hours every week — on launch days, the entire system needs an update while the store is open.',
   },
   {
     Icon: Package,
@@ -101,18 +101,18 @@ const FEATURES = [
     Icon: Building2,
     title: 'Multi-Branch, One Platform',
     desc: 'Each branch gets its own secure login portal. All branches share the same live price list. One update from HQ, reflected everywhere in 2 minutes.',
-    highlight: 'Perfect for 2\u201350 branch operations',
+    highlight: 'Scales to any number of branches',
   },
   {
     Icon: Bell,
     title: 'Real-Time Price Change Alerts',
-    desc: 'When you update prices in your sheet, every staff member\'s screen shows a live notification: "Prices updated \u2014 tap to refresh." No one is ever working on stale data.',
+    desc: 'When you update prices in your sheet, every staff member\'s screen shows a live notification: "Prices updated — tap to refresh." No one is ever working on stale data.',
     highlight: 'Zero lag, zero excuses',
   },
   {
     Icon: Users,
     title: 'Role-Based Access',
-    desc: 'Sales staff see the catalogue. Managers see team analytics. Owners see everything \u2014 user management, sync controls, and store-wide performance.',
+    desc: 'Sales staff see the catalogue. Managers see team analytics. Owners see everything — user management, sync controls, and store-wide performance.',
     highlight: 'No information overload',
   },
   {
@@ -120,12 +120,6 @@ const FEATURES = [
     title: 'Staff Activity Analytics',
     desc: 'Know which staff member checked prices the most today. Track active sessions, page views, and engagement per user. Built-in accountability.',
     highlight: 'Built-in accountability',
-  },
-  {
-    Icon: WifiOff,
-    title: 'Works Offline Too',
-    desc: "Poor network in your store? SalesSync caches the latest price list on device. Staff can still browse the full catalogue offline. Auto-syncs the moment connectivity returns.",
-    highlight: 'No internet = no problem',
   },
   {
     Icon: Shield,
@@ -153,7 +147,7 @@ const HOW_IT_WORKS = [
   },
   {
     step: '4',
-    title: 'Update Sheet \u2192 Everyone Sees It',
+    title: 'Update Sheet → Everyone Sees It',
     desc: 'Change a price in your Google Sheet. In 2 minutes, every staff member\'s device shows the update. No IT, no app updates.',
   },
 ];
@@ -161,11 +155,11 @@ const HOW_IT_WORKS = [
 const FAQS = [
   {
     q: 'Do my staff need to install any app?',
-    a: "No. SalesSync is a web app that works in any browser on any device \u2014 Android, iPhone, tablet, or desktop. They just open the URL and log in. It also works as a PWA \u2014 they can 'Add to Home Screen' for an app-like experience.",
+    a: "No. SalesSync is a web app that works in any browser on any device — Android, iPhone, tablet, or desktop. They just open the URL and log in. It also works as a PWA — they can 'Add to Home Screen' for an app-like experience.",
   },
   {
     q: 'What if my internet goes down in the store?',
-    a: 'SalesSync caches the latest price list on-device. Staff can continue browsing the full catalogue offline. The moment connectivity returns, it auto-syncs any updates from your Google Sheet.',
+    a: 'SalesSync requires an active internet connection to display prices. This ensures your staff always see the latest, most accurate data — never an outdated price list. We recommend keeping a mobile data connection as a backup in areas with unstable Wi-Fi.',
   },
   {
     q: 'We have 4 branches. Do we need 4 separate accounts?',
@@ -173,23 +167,23 @@ const FAQS = [
   },
   {
     q: 'How do I update prices?',
-    a: 'Just update your existing Google Sheet \u2014 the same way you do today. SalesSync reads it every 2 minutes and pushes updates to all connected devices automatically. You can also force-sync instantly from the admin panel.',
+    a: 'Just update your existing Google Sheet — the same way you do today. SalesSync reads it every 2 minutes and pushes updates to all connected devices automatically. You can also force-sync instantly from the admin panel.',
   },
   {
     q: 'Is my price data secure? Can competitors see my prices?',
-    a: 'Your store is private \u2014 only staff you add can log in. Data is isolated per store. No other store or user can see your prices, your staff, or your catalogue. All data is encrypted in transit.',
+    a: 'Your store is private — only staff you add can log in. Data is isolated per store. No other store or user can see your prices, your staff, or your catalogue. All data is encrypted in transit.',
   },
   {
     q: 'What happens after the 5-day trial?',
-    a: "After the trial, you'll be prompted to add a payment method via Razorpay. Billing is per user per month \u2014 \u20b9300 for Sales, \u20b9500 for Managers, \u20b9700 for Admins. No long-term contracts. Cancel anytime.",
+    a: "After the trial, you'll be prompted to add a payment method via Razorpay. Billing is per user per month — ₹300 for Sales, ₹500 for Managers, ₹700 for Admins. No long-term contracts. Cancel anytime.",
   },
   {
     q: 'We also sell appliances, not just phones. Does it work?',
-    a: 'Yes. SalesSync works for any product catalogue \u2014 mobile phones, TVs, ACs, refrigerators, washing machines. As long as your price list is in Google Sheets, SalesSync can serve it.',
+    a: 'Yes. SalesSync works for any product catalogue — mobile phones, TVs, ACs, refrigerators, washing machines. As long as your price list is in Google Sheets, SalesSync can serve it.',
   },
   {
     q: 'Can I control what my sales staff sees?',
-    a: 'Yes. Sales staff see only the product catalogue and search. Store Managers see team analytics on top. Admins see everything \u2014 user management, price sync controls, and full analytics.',
+    a: 'Yes. Sales staff see only the product catalogue and search. Store Managers see team analytics on top. Admins see everything — user management, price sync controls, and full analytics.',
   },
 ];
 
@@ -331,13 +325,13 @@ function LandingPage() {
             ))}
           </div>
           <div className={`rounded-xl p-3 mb-6 text-sm text-left border ${isDark ? 'bg-orange-500/10 border-orange-500/20 text-orange-200' : 'bg-orange-50 border-orange-200 text-orange-800'}`}>
-            <strong>What to do now:</strong> Click the link above, log in, then go to Admin \u2192 Settings to connect your Google Sheets price list.
+            <strong>What to do now:</strong> Click the link above, log in, then go to Admin → Settings to connect your Google Sheets price list.
           </div>
           <Button
             className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black text-base py-6"
             onClick={() => { window.location.href = success.url; }}
           >
-            Open My Store \u2192
+            Open My Store →
           </Button>
         </div>
       </div>
@@ -372,7 +366,7 @@ function LandingPage() {
           </h1>
           <p className={`text-xl md:text-2xl mb-4 max-w-3xl mx-auto leading-relaxed ${textSecondary}`}>
             SalesSync gives every salesperson in every branch a live, searchable price catalogue
-            \u2014 synced automatically from your Google Sheet, updated in real time, accessible on any phone.
+            — synced automatically from your Google Sheet, updated in real time, accessible on any phone.
           </p>
           <p className={`mb-10 text-lg ${textMuted}`}>
             No more printed price lists. No more WhatsApp price updates. No more customers walking because your staff didn&apos;t know today&apos;s offer.
@@ -383,9 +377,9 @@ function LandingPage() {
               onClick={scrollToForm}
               className="bg-orange-500 hover:bg-orange-400 text-black font-black text-lg px-10 py-6 rounded-xl shadow-lg"
             >
-              Start Free Trial \u2014 5 Days Free
+              Start Free Trial — 5 Days Free
             </Button>
-            <span className={`text-sm ${textMuted}`}>No credit card \u00b7 Setup in 2 minutes \u00b7 Cancel anytime</span>
+            <span className={`text-sm ${textMuted}`}>No credit card · Setup in 2 minutes · Cancel anytime</span>
           </div>
         </div>
       </section>
@@ -396,7 +390,6 @@ function LandingPage() {
           {[
             { Icon: MapPin, text: 'Works across all your branches' },
             { Icon: Zap, text: 'Prices update in under 2 minutes' },
-            { Icon: WifiOff, text: 'Works offline too' },
             { Icon: Shield, text: 'Private & secure per store' },
             { Icon: BarChart2, text: 'Staff analytics built-in' },
           ].map(({ Icon, text }) => (
@@ -419,7 +412,7 @@ function LandingPage() {
             </h2>
             <p className={`text-lg max-w-2xl mx-auto ${textSecondary}`}>
               Prices change daily. Offers expire overnight. New models launch every week.
-              Your team is doing their best \u2014 but the tools aren&apos;t keeping up.
+              Your team is doing their best — but the tools aren&apos;t keeping up.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -444,7 +437,7 @@ function LandingPage() {
             <div className={`inline-block rounded-xl px-8 py-5 max-w-2xl border ${isDark ? 'bg-orange-500/5 border-orange-500/20' : 'bg-orange-50 border-orange-200'}`}>
               <p className={`font-semibold text-lg ${isDark ? 'text-orange-200' : 'text-orange-800'}`}>
                 Every wrong price quoted is either a lost sale or a lost margin.<br />
-                <span className="font-black">Across a 5-person team, this happens 10\u201320 times a week.</span>
+                <span className="font-black">Across a 5-person team, this happens 10–20 times a week.</span>
               </p>
             </div>
           </div>
@@ -526,13 +519,13 @@ function LandingPage() {
               {
                 Icon: Store,
                 title: 'Single-Store Retailers',
-                desc: "You have one shop and 3\u201310 sales staff. Prices change every week and you're tired of printing new sheets or sending WhatsApp messages. SalesSync puts the latest catalogue on every salesperson's phone, always.",
+                desc: "You have one shop and a team of sales staff. Prices change every week and you're tired of printing new sheets or sending WhatsApp messages. SalesSync puts the latest catalogue on every salesperson's phone, always.",
                 tag: 'Most popular',
               },
               {
                 Icon: Building2,
                 title: 'Multi-Branch Operators',
-                desc: "You run 2\u201320 branches across a city or region. Maintaining price consistency is a daily headache. SalesSync gives every branch the same live catalogue \u2014 with branch-level analytics so you know how each store performs.",
+                desc: "You run multiple branches across a city or region. Maintaining price consistency is a daily headache. SalesSync gives every branch the same live catalogue — with branch-level analytics so you know how each store performs.",
                 tag: 'Great for chains',
               },
               {
@@ -571,7 +564,7 @@ function LandingPage() {
             <p className="text-orange-500 text-sm font-bold uppercase tracking-widest mb-3">Pricing</p>
             <h2 className={`text-3xl md:text-4xl font-black mb-3 ${textPrimary}`}>Simple, transparent pricing</h2>
             <p className={`text-lg mb-2 ${textSecondary}`}>Pay per user. Only pay for your active team. No hidden fees.</p>
-            <p className="text-orange-500 font-semibold">5-day free trial \u2014 no credit card required</p>
+            <p className="text-orange-500 font-semibold">5-day free trial — no credit card required</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {[
@@ -580,7 +573,7 @@ function LandingPage() {
                 role: 'Sales',
                 price: '300',
                 desc: 'For your floor sales staff',
-                features: ['Full live price catalogue', 'Search & filter all products', 'Bank offers & exchange details', 'Works on any phone or tablet', 'Works offline', 'Real-time price change alerts'],
+                features: ['Full live price catalogue', 'Search & filter all products', 'Bank offers & exchange details', 'Works on any phone or tablet', 'Real-time price change alerts'],
                 highlight: false,
               },
               {
@@ -621,7 +614,7 @@ function LandingPage() {
                 <h3 className={`text-xl font-bold ${textPrimary}`}>{plan.role}</h3>
                 <p className={`text-sm mb-4 ${textMuted}`}>{plan.desc}</p>
                 <div className="mb-6">
-                  <span className={`text-4xl font-black ${textPrimary}`}>\u20b9{plan.price}</span>
+                  <span className={`text-4xl font-black ${textPrimary}`}>₹{plan.price}</span>
                   <span className={`text-sm ${textMuted}`}> / user / month</span>
                 </div>
                 <ul className="space-y-2 flex-1 mb-6">
@@ -649,7 +642,7 @@ function LandingPage() {
           </div>
           <div className={`rounded-xl p-5 text-center border ${cardBg}`}>
             <p className={`text-sm ${textSecondary}`}>
-              <strong className={textPrimary}>Example:</strong> A store with 6 Sales + 1 Manager + 1 Admin = \u20b9{(6 * 300) + 500 + 700}/month.
+              <strong className={textPrimary}>Example:</strong> A store with 6 Sales + 1 Manager + 1 Admin = ₹{(6 * 300) + 500 + 700}/month.
               Less than what you spend on printing price lists and lost margins from wrong quotes.
             </p>
           </div>
@@ -759,7 +752,7 @@ function LandingPage() {
               <div className="space-y-1">
                 <Label htmlFor="googleSheetId" className={labelCls}>
                   Google Sheet ID{' '}
-                  <span className={`font-normal ${textMuted}`}>(optional \u2014 add later)</span>
+                  <span className={`font-normal ${textMuted}`}>(optional — add later)</span>
                 </Label>
                 <Input
                   id="googleSheetId" name="googleSheetId" placeholder="Paste your spreadsheet ID here"
@@ -778,7 +771,7 @@ function LandingPage() {
                 className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black text-base py-6"
                 disabled={loading}
               >
-                {loading ? 'Creating your store...' : 'Create My Store \u2014 Start Free Trial \u2192'}
+                {loading ? 'Creating your store...' : 'Create My Store — Start Free Trial →'}
               </Button>
               <p className={`text-xs text-center ${textMuted}`}>
                 By registering you agree to fair-use terms. No credit card for trial. Cancel anytime.
@@ -803,13 +796,13 @@ function LandingPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-orange-500 hover:text-orange-400 mt-3 transition-colors font-medium"
               >
-                deda.systems \u2197
+                deda.systems ↗
               </a>
             </div>
             <div>
               <h4 className={`font-semibold mb-3 ${textPrimary}`}>Product</h4>
               <ul className={`space-y-2 text-sm ${textMuted}`}>
-                {['Live Price Catalogue', 'Google Sheets Sync', 'Multi-Branch Support', 'Role-Based Access', 'Staff Analytics', 'Offline Support'].map((item) => (
+                {['Live Price Catalogue', 'Google Sheets Sync', 'Multi-Branch Support', 'Role-Based Access', 'Staff Analytics'].map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
@@ -817,9 +810,9 @@ function LandingPage() {
             <div>
               <h4 className={`font-semibold mb-3 ${textPrimary}`}>Pricing</h4>
               <ul className={`space-y-2 text-sm ${textMuted}`}>
-                <li>Sales Staff \u2014 \u20b9300/user/month</li>
-                <li>Store Manager \u2014 \u20b9500/user/month</li>
-                <li>Admin \u2014 \u20b9700/user/month</li>
+                <li>Sales Staff — ₹300/user/month</li>
+                <li>Store Manager — ₹500/user/month</li>
+                <li>Admin — ₹700/user/month</li>
                 <li className="text-orange-500 font-semibold">5-day free trial on all plans</li>
               </ul>
               <div className="mt-4">
@@ -835,7 +828,7 @@ function LandingPage() {
           </div>
           <div className={`border-t pt-6 text-center text-xs ${isDark ? 'border-zinc-800 text-zinc-600' : 'border-gray-200 text-gray-400'}`}>
             <p>
-              \u00a9 {new Date().getFullYear()}{' '}
+              © {new Date().getFullYear()}{' '}
               <a
                 href="https://deda.systems"
                 target="_blank"
@@ -846,7 +839,7 @@ function LandingPage() {
               </a>
               . SalesSync is designed for mobile phone and appliance retailers in India.
             </p>
-            <p className="mt-1">Billing powered by Razorpay \u00b7 Hosted on Railway \u00b7 Data stored in India</p>
+            <p className="mt-1">Billing powered by Razorpay · Hosted on Railway · Data stored in India</p>
           </div>
         </div>
       </footer>
@@ -916,7 +909,7 @@ function LoginPage({ tenantSlug }: { tenantSlug: string }) {
             <div className="space-y-1">
               <Label htmlFor="password" className="font-semibold text-white">Password</Label>
               <Input
-                id="password" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+                id="password" type="password" placeholder="••••••••"
                 value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading}
                 className="h-11 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 focus-visible:ring-orange-500 focus-visible:border-orange-500"
               />
@@ -929,12 +922,12 @@ function LoginPage({ tenantSlug }: { tenantSlug: string }) {
               className="w-full bg-orange-500 hover:bg-orange-400 text-black font-black py-6 text-base"
               disabled={loading}
             >
-              {loading ? 'Signing in\u2026' : 'Sign In'}
+              {loading ? 'Signing in…' : 'Sign In'}
             </Button>
           </form>
         </div>
         <p className="text-center text-xs text-zinc-600 mt-6">
-          <a href="/" className="text-orange-500 hover:text-orange-400 transition-colors">\u2190 Back to SalesSync</a>
+          <a href="/" className="text-orange-500 hover:text-orange-400 transition-colors">← Back to SalesSync</a>
         </p>
       </div>
     </div>
