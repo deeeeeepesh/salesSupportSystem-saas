@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -27,18 +27,61 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { User } from '@/types';
-import { ArrowLeft, RefreshCw, UserPlus, Shield, Users, Trash2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, UserPlus, Shield, Users, Trash2, CreditCard } from 'lucide-react';
 import { UserAnalytics } from '@/components/admin/UserAnalytics';
 
+// ── Pricing constants (paise) ──────────────────────────────────────────────
+const PRICE_STORE_BASE = 200000;   // ₹2,000
+const PRICE_EXTRA_STAFF = 20000;   // ₹200
+const PRICE_EXTRA_MANAGER = 50000; // ₹500
+const PRICE_EXTRA_ADMIN = 70000;   // ₹700
+
+function calcMonthly(adminSeats: number, managerSeats: number, salesSeats: number, branches: number): number {
+  const extraBranchCost = Math.max(0, branches - 1) * PRICE_STORE_BASE;
+  const extraAdmins   = Math.max(0, adminSeats   - 1);
+  const extraManagers = Math.max(0, managerSeats - branches);
+  const extraStaff    = Math.max(0, salesSeats   - branches * 4);
+  return PRICE_STORE_BASE + extraBranchCost
+    + extraAdmins   * PRICE_EXTRA_ADMIN
+    + extraManagers * PRICE_EXTRA_MANAGER
+    + extraStaff    * PRICE_EXTRA_STAFF;
+}
+
+function paiseToRupees(paise: number): string {
+  return (paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 0 });
+}
+
+// ── Types ──────────────────────────────────────────────────────────────────
+interface Subscription {
+  id: string;
+  tenantId: string;
+  adminSeats: number;
+  managerSeats: number;
+  salesSeats: number;
+  monthlyAmount: number;
+  tenant: {
+    status: string;
+    trialEndsAt: string | null;
+    name: string;
+  };
+}
+
+interface UsedSeats {
+  ADMIN: number;
+  STORE_MANAGER: number;
+  SALES: number;
+}
+
+// ── Component ──────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshingCache, setRefreshingCache] = useState(false);
-  
+
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserName, setNewUserName] = useState('');
@@ -46,6 +89,21 @@ export default function AdminPage() {
   const [newUserRole, setNewUserRole] = useState<'SALES' | 'ADMIN' | 'STORE_MANAGER'>('SALES');
   const [creatingUser, setCreatingUser] = useState(false);
 
+  // ── Subscription state ──
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [usedSeats, setUsedSeats] = useState<UsedSeats>({ ADMIN: 0, STORE_MANAGER: 0, SALES: 0 });
+  const [subLoading, setSubLoading] = useState(true);
+  const [subError, setSubError] = useState('');
+  const [subSaving, setSubSaving] = useState(false);
+  const [subSuccess, setSubSuccess] = useState('');
+
+  // Form inputs (initialised from fetched data)
+  const [formAdminSeats, setFormAdminSeats] = useState(1);
+  const [formManagerSeats, setFormManagerSeats] = useState(1);
+  const [formSalesSeats, setFormSalesSeats] = useState(4);
+  const [formBranches, setFormBranches] = useState(1);
+
+  // ── Auth guards ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/');
@@ -54,21 +112,12 @@ export default function AdminPage() {
     }
   }, [status, session, router]);
 
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
-      fetchUsers();
-    }
-  }, [status, session]);
-
-  const fetchUsers = async () => {
+  // ── Data fetching ────────────────────────────────────────────────────────
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/users');
-      
-      if (!res.ok) {
-        throw new Error('Failed to fetch users');
-      }
-      
+      if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
       setUsers(data);
     } catch (err) {
@@ -77,30 +126,63 @@ export default function AdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  const fetchSubscription = useCallback(async () => {
+    try {
+      setSubLoading(true);
+      const res = await fetch('/api/tenant/subscription');
+      if (!res.ok) throw new Error('Failed to fetch subscription');
+      const data = await res.json();
+      setSubscription(data.subscription);
+      setUsedSeats(data.usedSeats);
+      setFormAdminSeats(data.subscription.adminSeats);
+      setFormManagerSeats(data.subscription.managerSeats);
+      setFormSalesSeats(data.subscription.salesSeats);
+      // branchCount is not stored on subscription directly — derive from included managers
+      // (included managers == branchCount, so branchCount == managerSeats when no extra managers)
+      // Use monthlyAmount back-calculation isn't reliable; default to 1 branch on first load
+      // unless the server exposes it. For now keep as 1 and let admin adjust.
+    } catch (err) {
+      setSubError('Failed to load subscription data');
+      console.error(err);
+    } finally {
+      setSubLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
+      fetchUsers();
+      fetchSubscription();
+    }
+  }, [status, session, fetchUsers, fetchSubscription]);
+
+  // ── Live cost preview ────────────────────────────────────────────────────
+  const previewAmount = calcMonthly(formAdminSeats, formManagerSeats, formSalesSeats, formBranches);
+  const includedAdmins   = 1;
+  const includedManagers = formBranches;
+  const includedStaff    = formBranches * 4;
+  const extraAdmins      = Math.max(0, formAdminSeats   - includedAdmins);
+  const extraManagers    = Math.max(0, formManagerSeats - includedManagers);
+  const extraStaff       = Math.max(0, formSalesSeats   - includedStaff);
+  const extraBranches    = Math.max(0, formBranches - 1);
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreatingUser(true);
     setError('');
-
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: newUserEmail,
-          name: newUserName,
-          password: newUserPassword,
-          role: newUserRole,
-        }),
+        body: JSON.stringify({ email: newUserEmail, name: newUserName, password: newUserPassword, role: newUserRole }),
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to create user');
       }
-
       setNewUserEmail('');
       setNewUserName('');
       setNewUserPassword('');
@@ -108,8 +190,7 @@ export default function AdminPage() {
       setShowCreateUser(false);
       fetchUsers();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setError(errorMessage);
+      setError(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setCreatingUser(false);
     }
@@ -120,16 +201,9 @@ export default function AdminPage() {
       const res = await fetch('/api/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: userId,
-          isActive: !currentStatus,
-        }),
+        body: JSON.stringify({ id: userId, isActive: !currentStatus }),
       });
-
-      if (!res.ok) {
-        throw new Error('Failed to update user');
-      }
-
+      if (!res.ok) throw new Error('Failed to update user');
       fetchUsers();
     } catch (err) {
       setError('Failed to update user status');
@@ -140,21 +214,13 @@ export default function AdminPage() {
   const handleForcePasswordReset = async (userId: string) => {
     const newPassword = prompt('Enter new password for this user:');
     if (!newPassword) return;
-
     try {
       const res = await fetch('/api/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: userId,
-          password: newPassword,
-        }),
+        body: JSON.stringify({ id: userId, password: newPassword }),
       });
-
-      if (!res.ok) {
-        throw new Error('Failed to reset password');
-      }
-
+      if (!res.ok) throw new Error('Failed to reset password');
       alert('Password reset successfully');
     } catch {
       setError('Failed to reset password');
@@ -166,40 +232,29 @@ export default function AdminPage() {
       const res = await fetch('/api/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: userId,
-          role: newRole,
-        }),
+        body: JSON.stringify({ id: userId, role: newRole }),
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to update user role');
       }
-
       fetchUsers();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update user role';
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : 'Failed to update user role');
       console.error(err);
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const res = await fetch(`/api/users?id=${userId}`, {
-        method: 'DELETE',
-      });
-
+      const res = await fetch(`/api/users?id=${userId}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to delete user');
       }
-
       fetchUsers();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete user';
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
       console.error(err);
     }
   };
@@ -207,14 +262,8 @@ export default function AdminPage() {
   const handleRefreshCache = async () => {
     setRefreshingCache(true);
     try {
-      const res = await fetch('/api/cache/refresh', {
-        method: 'POST',
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to refresh cache');
-      }
-
+      const res = await fetch('/api/cache/refresh', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to refresh cache');
       alert('Cache refreshed successfully');
     } catch (err) {
       setError('Failed to refresh cache');
@@ -224,6 +273,34 @@ export default function AdminPage() {
     }
   };
 
+  const handleSaveSeats = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubSaving(true);
+    setSubError('');
+    setSubSuccess('');
+    try {
+      const res = await fetch('/api/tenant/subscription', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminSeats: formAdminSeats,
+          managerSeats: formManagerSeats,
+          salesSeats: formSalesSeats,
+          branchCount: formBranches,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save changes');
+      setSubscription(data.subscription);
+      setSubSuccess(`Plan updated. New monthly amount: ₹${paiseToRupees(data.newMonthlyAmount)}`);
+    } catch (err) {
+      setSubError(err instanceof Error ? err.message : 'Failed to save changes');
+    } finally {
+      setSubSaving(false);
+    }
+  };
+
+  // ── Render guards ─────────────────────────────────────────────────────────
   if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -236,6 +313,7 @@ export default function AdminPage() {
     return null;
   }
 
+  // ── JSX ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -265,7 +343,186 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* User Management */}
+        {/* ── Plan & Seats ──────────────────────────────────────────────────── */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Plan &amp; Seats
+            </CardTitle>
+            <CardDescription>View your current plan and adjust seat allocations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {subLoading ? (
+              <p className="text-sm text-muted-foreground">Loading subscription data…</p>
+            ) : (
+              <>
+                {/* Plan summary card */}
+                {subscription && (
+                  <div className="mb-6 p-4 border rounded-lg bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-lg">{subscription.tenant.name}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant={subscription.tenant.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                          {subscription.tenant.status}
+                        </Badge>
+                        {subscription.tenant.status === 'TRIAL' && subscription.tenant.trialEndsAt && (
+                          <span className="text-xs text-muted-foreground">
+                            Trial ends: {new Date(subscription.tenant.trialEndsAt).toLocaleDateString('en-IN')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold">₹{paiseToRupees(subscription.monthlyAmount)}</p>
+                      <p className="text-xs text-muted-foreground">per month</p>
+                    </div>
+                  </div>
+                )}
+
+                {subError && (
+                  <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md mb-4">
+                    {subError}
+                  </div>
+                )}
+                {subSuccess && (
+                  <div className="p-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md mb-4">
+                    {subSuccess}
+                  </div>
+                )}
+
+                {/* Seat adjustment form */}
+                <form onSubmit={handleSaveSeats}>
+                  {/* Seat inputs */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="adminSeats">Admin Seats</Label>
+                      <Input
+                        id="adminSeats"
+                        type="number"
+                        min={1}
+                        value={formAdminSeats}
+                        onChange={(e) => setFormAdminSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                      />
+                      <p className="text-xs text-muted-foreground">Used: {usedSeats.ADMIN}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="managerSeats">Manager Seats</Label>
+                      <Input
+                        id="managerSeats"
+                        type="number"
+                        min={1}
+                        value={formManagerSeats}
+                        onChange={(e) => setFormManagerSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                      />
+                      <p className="text-xs text-muted-foreground">Used: {usedSeats.STORE_MANAGER}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="salesSeats">Staff Seats</Label>
+                      <Input
+                        id="salesSeats"
+                        type="number"
+                        min={4}
+                        value={formSalesSeats}
+                        onChange={(e) => setFormSalesSeats(Math.max(4, parseInt(e.target.value) || 4))}
+                      />
+                      <p className="text-xs text-muted-foreground">Used: {usedSeats.SALES}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="branches">Branches</Label>
+                      <Input
+                        id="branches"
+                        type="number"
+                        min={1}
+                        value={formBranches}
+                        onChange={(e) => setFormBranches(Math.max(1, parseInt(e.target.value) || 1))}
+                      />
+                      <p className="text-xs text-muted-foreground">1st included</p>
+                    </div>
+                  </div>
+
+                  {/* Cost breakdown table */}
+                  <div className="border rounded-lg overflow-hidden mb-4">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/60 text-muted-foreground">
+                          <th className="text-left px-4 py-2 font-medium">Role / Item</th>
+                          <th className="text-center px-4 py-2 font-medium">Allocated</th>
+                          <th className="text-center px-4 py-2 font-medium">Used</th>
+                          <th className="text-center px-4 py-2 font-medium">Included</th>
+                          <th className="text-center px-4 py-2 font-medium">Extra</th>
+                          <th className="text-right px-4 py-2 font-medium">Extra Cost</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        <tr>
+                          <td className="px-4 py-2">Admin</td>
+                          <td className="px-4 py-2 text-center">{formAdminSeats}</td>
+                          <td className="px-4 py-2 text-center">{usedSeats.ADMIN}</td>
+                          <td className="px-4 py-2 text-center">{includedAdmins}</td>
+                          <td className="px-4 py-2 text-center">{extraAdmins}</td>
+                          <td className="px-4 py-2 text-right">
+                            {extraAdmins > 0 ? `₹${paiseToRupees(extraAdmins * PRICE_EXTRA_ADMIN)}` : '₹0'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2">Manager</td>
+                          <td className="px-4 py-2 text-center">{formManagerSeats}</td>
+                          <td className="px-4 py-2 text-center">{usedSeats.STORE_MANAGER}</td>
+                          <td className="px-4 py-2 text-center">{includedManagers} (×branches)</td>
+                          <td className="px-4 py-2 text-center">{extraManagers}</td>
+                          <td className="px-4 py-2 text-right">
+                            {extraManagers > 0 ? `₹${paiseToRupees(extraManagers * PRICE_EXTRA_MANAGER)}` : '₹0'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2">Staff</td>
+                          <td className="px-4 py-2 text-center">{formSalesSeats}</td>
+                          <td className="px-4 py-2 text-center">{usedSeats.SALES}</td>
+                          <td className="px-4 py-2 text-center">{includedStaff} (×branches)</td>
+                          <td className="px-4 py-2 text-center">{extraStaff}</td>
+                          <td className="px-4 py-2 text-right">
+                            {extraStaff > 0 ? `₹${paiseToRupees(extraStaff * PRICE_EXTRA_STAFF)}` : '₹0'}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="px-4 py-2">Branch (base)</td>
+                          <td className="px-4 py-2 text-center">{formBranches}</td>
+                          <td className="px-4 py-2 text-center">—</td>
+                          <td className="px-4 py-2 text-center">1</td>
+                          <td className="px-4 py-2 text-center">{extraBranches}</td>
+                          <td className="px-4 py-2 text-right">
+                            {extraBranches > 0
+                              ? `₹${paiseToRupees(extraBranches * PRICE_STORE_BASE)}`
+                              : '₹0'}
+                          </td>
+                        </tr>
+                        <tr className="bg-muted/40 font-semibold">
+                          <td className="px-4 py-2" colSpan={5}>
+                            Base store (1 Admin + 1 Manager + 4 Staff)
+                          </td>
+                          <td className="px-4 py-2 text-right">₹{paiseToRupees(PRICE_STORE_BASE)}</td>
+                        </tr>
+                        <tr className="bg-muted/70 font-bold text-base">
+                          <td className="px-4 py-3" colSpan={5}>
+                            Total monthly
+                          </td>
+                          <td className="px-4 py-3 text-right">₹{paiseToRupees(previewAmount)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <Button type="submit" disabled={subSaving}>
+                    {subSaving ? 'Saving…' : 'Save Changes'}
+                  </Button>
+                </form>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ── User Management ───────────────────────────────────────────────── */}
         <Card className="mb-6">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
