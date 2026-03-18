@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
           tenantId: tenant.id,
           status: 'TRIAL',
           adminSeats: 1,
-          salesSeats: 0,
-          managerSeats: 0,
-          monthlyAmount: 70000, // ₹700 for 1 admin in paise
+          managerSeats: 1,
+          salesSeats: 4,
+          monthlyAmount: 200000, // ₹2,000 in paise for 1 store
         },
       });
 
