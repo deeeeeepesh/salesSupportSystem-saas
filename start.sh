@@ -2,7 +2,9 @@
 set -e
 
 echo "Running Prisma migrations..."
-npx prisma migrate deploy
+node node_modules/prisma/build/index.js migrate deploy
 
-echo "Starting Next.js server..."
+echo "Starting Next.js server on port ${PORT:-3000}..."
+export PORT="${PORT:-3000}"
+export HOSTNAME="0.0.0.0"
 exec node server.js
