@@ -1,7 +1,7 @@
 {
   "name": "SalesSync by Deda Systems",
   "short_name": "SalesSync",
-  "description": "Real-time price catalogue for mobile phone and appliance retailers. Synced from Google Sheets, always accurate.",
+  "description": "Real-time price catalogue and sales support system for mobile phone and appliance retailers in India.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0A0A",
