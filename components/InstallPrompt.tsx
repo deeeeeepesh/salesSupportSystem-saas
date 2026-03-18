@@ -108,7 +108,7 @@ export function InstallPrompt() {
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Install the app for quick access and offline support
+                Install the app for quick access from your home screen
               </p>
             )}
           </div>
