@@ -108,6 +108,7 @@ export async function PATCH(request: NextRequest) {
   const updated = await prisma.subscription.update({
     where: { tenantId: session.user.tenantId },
     data: { adminSeats, managerSeats, salesSeats, monthlyAmount },
+    include: { tenant: { select: { status: true, trialEndsAt: true, name: true } } },
   });
 
   return NextResponse.json({ subscription: updated, newMonthlyAmount: monthlyAmount });
