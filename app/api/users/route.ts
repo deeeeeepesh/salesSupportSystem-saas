@@ -6,11 +6,41 @@ import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
 
+// Map role to the subscription seat field
+const ROLE_TO_SEAT: Record<string, 'adminSeats' | 'managerSeats' | 'salesSeats'> = {
+  ADMIN: 'adminSeats',
+  STORE_MANAGER: 'managerSeats',
+  SALES: 'salesSeats',
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN: 'admin',
+  STORE_MANAGER: 'manager',
+  SALES: 'staff',
+};
+
+async function checkSeatAvailable(tenantId: string, role: string): Promise<string | null> {
+  const seatField = ROLE_TO_SEAT[role];
+  if (!seatField) return null; // unknown role, let role validation catch it
+
+  const [subscription, usedCount] = await Promise.all([
+    prisma.subscription.findUnique({ where: { tenantId }, select: { [seatField]: true } }),
+    prisma.user.count({ where: { tenantId, role, isActive: true } }),
+  ]);
+
+  if (!subscription) return 'No subscription found for this tenant';
+
+  const allocated = (subscription as Record<string, number>)[seatField];
+  if (usedCount >= allocated) {
+    return `${ROLE_LABEL[role]} seat limit reached (${usedCount}/${allocated}). Upgrade your plan to add more.`;
+  }
+  return null;
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    // Only admins can list users
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
@@ -47,7 +77,6 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    // Only admins can create users
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
@@ -57,7 +86,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, name, password, role } = body;
 
-    // Validate input
     if (!email || !name || !password) {
       return NextResponse.json(
         { error: 'Email, name, and password are required' },
@@ -65,7 +93,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists within this tenant
+    const targetRole = role || 'SALES';
+
+    // Check seat limit before creating
+    const seatError = await checkSeatAvailable(tenantId, targetRole);
+    if (seatError) {
+      return NextResponse.json({ error: seatError }, { status: 403 });
+    }
+
     const existingUser = await prisma.user.findUnique({
       where: { email_tenantId: { email, tenantId } },
     });
@@ -77,16 +112,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user scoped to tenant
     const user = await prisma.user.create({
       data: {
         email,
         name,
         password: hashedPassword,
-        role: role || 'SALES',
+        role: targetRole,
         tenantId,
       },
       select: {
@@ -111,7 +144,6 @@ export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    // Only admins can update users
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
@@ -125,7 +157,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Verify the target user belongs to same tenant
     const targetUser = await prisma.user.findFirst({
       where: { id, tenantId },
     });
@@ -134,7 +165,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Prevent users from changing their own role
     if (role && id === session.user.id) {
       return NextResponse.json(
         { error: 'You cannot change your own role' },
@@ -142,7 +172,6 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Validate role if provided
     if (role && !['SALES', 'STORE_MANAGER', 'ADMIN'].includes(role)) {
       return NextResponse.json(
         { error: 'Invalid role. Must be SALES, STORE_MANAGER, or ADMIN' },
@@ -150,16 +179,27 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // Check seat limit when changing to a different role
+    if (role && role !== targetUser.role) {
+      const seatError = await checkSeatAvailable(tenantId, role);
+      if (seatError) {
+        return NextResponse.json({ error: seatError }, { status: 403 });
+      }
+    }
+
+    // Check seat limit when reactivating a user (isActive: false → true)
+    if (isActive === true && targetUser.isActive === false) {
+      const roleToCheck = role || targetUser.role;
+      const seatError = await checkSeatAvailable(tenantId, roleToCheck);
+      if (seatError) {
+        return NextResponse.json({ error: seatError }, { status: 403 });
+      }
+    }
+
     const updateData: Record<string, boolean | string> = {};
-    if (typeof isActive === 'boolean') {
-      updateData.isActive = isActive;
-    }
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 10);
-    }
-    if (role) {
-      updateData.role = role;
-    }
+    if (typeof isActive === 'boolean') updateData.isActive = isActive;
+    if (password) updateData.password = await bcrypt.hash(password, 10);
+    if (role) updateData.role = role;
 
     const user = await prisma.user.update({
       where: { id },
@@ -186,7 +226,6 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    // Only admins can delete users
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
@@ -200,7 +239,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Prevent users from deleting themselves
     if (id === session.user.id) {
       return NextResponse.json(
         { error: 'You cannot delete yourself' },
@@ -208,7 +246,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Verify the target user belongs to same tenant
     const targetUser = await prisma.user.findFirst({
       where: { id, tenantId },
     });
@@ -217,9 +254,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    await prisma.user.delete({
-      where: { id },
-    });
+    await prisma.user.delete({ where: { id } });
 
     return NextResponse.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
