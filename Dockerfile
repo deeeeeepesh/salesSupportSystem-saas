@@ -19,6 +19,11 @@ COPY . .
 # Generate Prisma Client
 RUN npx prisma generate
 
+# NEXT_PUBLIC_* vars are embedded into the client bundle at build time.
+# They must be declared as ARG here so Railway passes them in during docker build.
+ARG NEXT_PUBLIC_ROOT_DOMAIN
+ENV NEXT_PUBLIC_ROOT_DOMAIN=${NEXT_PUBLIC_ROOT_DOMAIN}
+
 # Build Next.js application
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
