@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'salessync.dedasystems.com';
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -14,46 +16,40 @@ export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isTenantSite, setIsTenantSite] = useState(false);
 
   useEffect(() => {
+    const host = window.location.hostname.replace(/:\d+$/, '');
+
+    // Only show on tenant subdomains (e.g. perumal.salessync.dedasystems.com)
+    // Not on the root domain or non-matching hosts
+    const onTenant = host !== ROOT_DOMAIN && host.endsWith(`.${ROOT_DOMAIN}`);
+    setIsTenantSite(onTenant);
+    if (!onTenant) return;
+
     // Check if app is already installed
-    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
+    const isInStandaloneMode =
+      window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone ||
       document.referrer.includes('android-app://');
-    
+
     setIsStandalone(isInStandaloneMode);
+    if (isInStandaloneMode) return;
 
     // Check if iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(isIOSDevice);
-
-    // Don't show prompt if already installed
-    if (isInStandaloneMode) {
-      return;
-    }
+    setIsIOS(/iphone|ipad|ipod/.test(userAgent));
 
     // Check localStorage for visit count and dismissed state
     const visitCount = parseInt(localStorage.getItem('pwa-visit-count') || '0');
     const dismissedUntil = localStorage.getItem('pwa-dismissed-until');
-    
-    // Increment visit count
+
     localStorage.setItem('pwa-visit-count', String(visitCount + 1));
 
-    // Check if dismissed and still within 7-day period
-    if (dismissedUntil) {
-      const dismissedDate = new Date(dismissedUntil);
-      if (new Date() < dismissedDate) {
-        return;
-      }
-    }
+    if (dismissedUntil && new Date() < new Date(dismissedUntil)) return;
 
-    // Show prompt after 2nd visit
-    if (visitCount >= 1) {
-      setShowPrompt(true);
-    }
+    if (visitCount >= 1) setShowPrompt(true);
 
-    // Listen for beforeinstallprompt event (Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -61,37 +57,26 @@ export function InstallPrompt() {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
   const handleInstall = async () => {
     if (deferredPrompt) {
-      // Android/Chrome - show native prompt
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
-        setShowPrompt(false);
-      }
+      if (outcome === 'accepted') setShowPrompt(false);
       setDeferredPrompt(null);
     }
-    // iOS - instructions are already shown in the banner
   };
 
   const handleDismiss = () => {
-    // Don't show again for 7 days
     const dismissUntil = new Date();
     dismissUntil.setDate(dismissUntil.getDate() + 7);
     localStorage.setItem('pwa-dismissed-until', dismissUntil.toISOString());
     setShowPrompt(false);
   };
 
-  if (!showPrompt || isStandalone) {
-    return null;
-  }
+  if (!isTenantSite || !showPrompt || isStandalone) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background border-t shadow-lg animate-in slide-in-from-bottom">
