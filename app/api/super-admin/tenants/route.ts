@@ -22,12 +22,28 @@ export async function GET(request: NextRequest) {
   const tenants = await prisma.tenant.findMany({
     include: {
       subscription: true,
+      priceMeta: { select: { lastSyncedAt: true } },
       _count: { select: { users: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
 
-  return NextResponse.json({ tenants });
+  // Count active users per tenant in one query
+  const activeUserCounts = await prisma.user.groupBy({
+    by: ['tenantId'],
+    where: { isActive: true },
+    _count: { id: true },
+  });
+  const activeCountMap = Object.fromEntries(
+    activeUserCounts.map((r) => [r.tenantId, r._count.id])
+  );
+
+  const enriched = tenants.map((t) => ({
+    ...t,
+    activeUserCount: activeCountMap[t.id] ?? 0,
+  }));
+
+  return NextResponse.json({ tenants: enriched });
 }
 
 export async function PATCH(request: NextRequest) {
