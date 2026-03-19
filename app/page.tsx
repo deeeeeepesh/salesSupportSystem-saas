@@ -818,7 +818,6 @@ function LandingPage() {
               </a>
               . SalesSync is designed for mobile phone and appliance retailers in India.
             </p>
-            <p className="mt-1">Billing powered by Razorpay · Hosted on Railway · Data stored in India</p>
           </div>
         </div>
       </footer>
