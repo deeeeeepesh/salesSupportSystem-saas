@@ -81,6 +81,9 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshingCache, setRefreshingCache] = useState(false);
+  const [syncingSheet, setSyncingSheet] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState('');
+  const [syncError, setSyncError] = useState('');
 
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -307,6 +310,27 @@ export default function AdminPage() {
       console.error(err);
     } finally {
       setRefreshingCache(false);
+    }
+  };
+
+  const handleSyncNow = async () => {
+    setSyncingSheet(true);
+    setSyncSuccess('');
+    setSyncError('');
+    try {
+      const res = await fetch('/api/price-sync', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Sync failed');
+      setSyncSuccess(
+        data.productsCount != null
+          ? `Sync completed — ${data.productsCount} products loaded`
+          : data.message || 'Sync completed successfully'
+      );
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : 'Sync failed');
+      console.error(err);
+    } finally {
+      setSyncingSheet(false);
     }
   };
 
@@ -581,12 +605,18 @@ export default function AdminPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={handleRefreshCache}
-                        disabled={refreshingCache}
+                        onClick={handleSyncNow}
+                        disabled={syncingSheet}
                       >
-                        <RefreshCw className={`mr-2 h-4 w-4 ${refreshingCache ? 'animate-spin' : ''}`} />
-                        Sync Now
+                        <RefreshCw className={`mr-2 h-4 w-4 ${syncingSheet ? 'animate-spin' : ''}`} />
+                        {syncingSheet ? 'Syncing…' : 'Sync Now'}
                       </Button>
+                      {syncSuccess && (
+                        <p className="mt-2 text-sm text-green-700">{syncSuccess}</p>
+                      )}
+                      {syncError && (
+                        <p className="mt-2 text-sm text-red-600">{syncError}</p>
+                      )}
                     </div>
                   </>
                 ) : (

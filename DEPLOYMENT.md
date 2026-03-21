@@ -98,6 +98,45 @@ npm run dev
 
 ## Production Deployment
 
+### Railway Cron Job Setup (Auto-Sync)
+
+The app uses a Railway Cron Job to automatically sync all tenant Google Sheets every 2 minutes.
+
+### Step 1: Add CRON_SECRET environment variable
+In Railway Dashboard → your service → Variables:
+```
+CRON_SECRET=<generate with: openssl rand -base64 32>
+```
+
+### Step 2: Create a Railway Cron Job
+In Railway Dashboard → your project → add a new **Cron Job** service:
+- **Schedule**: `*/2 * * * *` (every 2 minutes)
+- **Command**:
+  ```
+  curl -s -X POST https://your-domain.com/api/cron/sync-sheets \
+    -H "x-cron-secret: $CRON_SECRET"
+  ```
+  Replace `your-domain.com` with your actual deployment domain (e.g. `salessync.dedasystems.com`).
+
+### Step 3: Verify
+After deploying, manually trigger the cron endpoint to confirm it works:
+```bash
+curl -s -X POST https://your-domain.com/api/cron/sync-sheets \
+  -H "x-cron-secret: <your-secret>" | jq .
+```
+Expected response:
+```json
+{
+  "synced": 2,
+  "succeeded": 2,
+  "failed": 0,
+  "results": [
+    { "slug": "store1", "success": true, "productsCount": 47, "message": "Sync completed successfully" },
+    { "slug": "store2", "success": true, "productsCount": 23, "message": "No changes detected" }
+  ]
+}
+```
+
 ### Method 1: Docker Compose (Recommended)
 
 #### Step 1: Provision Droplet
