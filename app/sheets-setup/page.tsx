@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   FileSpreadsheet, CheckSquare, Table2, Share2,
-  CheckCircle2, Info, ChevronDown, ChevronUp, Sun, Moon, AlertCircle,
+  CheckCircle2, Info, ChevronDown, ChevronUp, Sun, Moon, AlertCircle, ExternalLink,
 } from 'lucide-react';
 
 function BoltIcon({ size = 16 }: { size?: number }) {
@@ -230,13 +230,15 @@ export default function SheetsSetupPage() {
             {/* Step 1 */}
             <div className={`rounded-xl border p-6 ${cardBg}`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0">
+                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0 mt-0.5">
                   1
                 </div>
-                <div>
-                  <div className={`flex items-center gap-2 mb-1 ${iconBox} w-fit px-2 py-1 rounded-md`}>
-                    <FileSpreadsheet className="w-4 h-4 text-orange-500" />
-                    <span className="text-orange-500 text-xs font-semibold">Google Sheets</span>
+                <div className="flex-1">
+                  <div className={`flex items-center gap-2 mb-1.5`}>
+                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-fit ${iconBox}`}>
+                      <FileSpreadsheet className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-500 text-xs font-semibold">Google Sheets</span>
+                    </div>
                   </div>
                   <h3 className={`text-lg font-black ${textPrimary}`}>Create Your Google Sheet</h3>
                 </div>
@@ -281,19 +283,48 @@ export default function SheetsSetupPage() {
                     </p>
                   </div>
                 </div>
+                <div className={`mt-4 rounded-lg border-2 border-orange-500 p-5 ${isDark ? 'bg-orange-500/5' : 'bg-orange-50/60'}`}>
+                  <div className="flex items-start gap-3 mb-3">
+                    <FileSpreadsheet className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className={`font-bold text-sm mb-1 ${textPrimary}`}>Don&apos;t want to set up the columns manually?</p>
+                      <p className={`text-sm ${textSecondary}`}>
+                        We&apos;ve pre-built a template with all the right headers and checkbox columns. Just make a copy and start adding your products.
+                      </p>
+                    </div>
+                  </div>
+                  <p className={`text-sm mb-3 ml-8 ${textSecondary}`}>
+                    Use our pre-built template — already has all 19 columns and checkboxes set up.
+                  </p>
+                  <div className="ml-8">
+                    <a
+                      href="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/copy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-orange-500 hover:bg-orange-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition-colors"
+                    >
+                      Open Template &amp; Make a Copy →
+                    </a>
+                    <p className={`text-xs mt-2 ${textMuted}`}>
+                      When prompted by Google, click &apos;Make a copy&apos;. The copy will be saved to your own Google Drive.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Step 2 */}
             <div className={`rounded-xl border p-6 ${cardBg}`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0">
+                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0 mt-0.5">
                   2
                 </div>
-                <div>
-                  <div className={`flex items-center gap-2 mb-1 ${iconBox} w-fit px-2 py-1 rounded-md`}>
-                    <CheckSquare className="w-4 h-4 text-orange-500" />
-                    <span className="text-orange-500 text-xs font-semibold">Checkboxes</span>
+                <div className="flex-1">
+                  <div className={`flex items-center gap-2 mb-1.5`}>
+                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-fit ${iconBox}`}>
+                      <CheckSquare className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-500 text-xs font-semibold">Checkboxes</span>
+                    </div>
                   </div>
                   <h3 className={`text-lg font-black ${textPrimary}`}>Set Up Columns Q, R, S as Checkboxes</h3>
                 </div>
@@ -322,13 +353,15 @@ export default function SheetsSetupPage() {
             {/* Step 3 */}
             <div className={`rounded-xl border p-6 ${cardBg}`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0">
+                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0 mt-0.5">
                   3
                 </div>
-                <div>
-                  <div className={`flex items-center gap-2 mb-1 ${iconBox} w-fit px-2 py-1 rounded-md`}>
-                    <Table2 className="w-4 h-4 text-orange-500" />
-                    <span className="text-orange-500 text-xs font-semibold">Data Entry</span>
+                <div className="flex-1">
+                  <div className={`flex items-center gap-2 mb-1.5`}>
+                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-fit ${iconBox}`}>
+                      <Table2 className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-500 text-xs font-semibold">Data Entry</span>
+                    </div>
                   </div>
                   <h3 className={`text-lg font-black ${textPrimary}`}>Add Your Products</h3>
                 </div>
@@ -371,13 +404,15 @@ export default function SheetsSetupPage() {
             {/* Step 4 */}
             <div className={`rounded-xl border p-6 ${cardBg}`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0">
+                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0 mt-0.5">
                   4
                 </div>
-                <div>
-                  <div className={`flex items-center gap-2 mb-1 ${iconBox} w-fit px-2 py-1 rounded-md`}>
-                    <FileSpreadsheet className="w-4 h-4 text-orange-500" />
-                    <span className="text-orange-500 text-xs font-semibold">Sheet ID</span>
+                <div className="flex-1">
+                  <div className={`flex items-center gap-2 mb-1.5`}>
+                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-fit ${iconBox}`}>
+                      <FileSpreadsheet className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-500 text-xs font-semibold">Sheet ID</span>
+                    </div>
                   </div>
                   <h3 className={`text-lg font-black ${textPrimary}`}>Get the Spreadsheet ID</h3>
                 </div>
@@ -396,13 +431,15 @@ export default function SheetsSetupPage() {
             {/* Step 5 */}
             <div className={`rounded-xl border p-6 ${cardBg}`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0">
+                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0 mt-0.5">
                   5
                 </div>
-                <div>
-                  <div className={`flex items-center gap-2 mb-1 ${iconBox} w-fit px-2 py-1 rounded-md`}>
-                    <Share2 className="w-4 h-4 text-orange-500" />
-                    <span className="text-orange-500 text-xs font-semibold">Sharing</span>
+                <div className="flex-1">
+                  <div className={`flex items-center gap-2 mb-1.5`}>
+                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-fit ${iconBox}`}>
+                      <Share2 className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-500 text-xs font-semibold">Google Drive</span>
+                    </div>
                   </div>
                   <h3 className={`text-lg font-black ${textPrimary}`}>Share the Sheet with SalesSync&apos;s Service Account</h3>
                 </div>
@@ -412,6 +449,16 @@ export default function SheetsSetupPage() {
                   SalesSync uses a Google Service Account to read your sheet. The service account email is displayed in your{' '}
                   <strong className={textPrimary}>Admin Panel → Google Sheets Integration</strong> section after you log in.
                 </p>
+                <div className={`p-4 rounded-lg border ${isDark ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-gray-100 border-gray-300 text-gray-700'}`}>
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm space-y-1.5">
+                      <p className="font-semibold">📍 Where to find the service account email:</p>
+                      <p>Log in → Admin Panel (top-right menu) → Google Sheets Integration card → look for the &quot;Service Account Email&quot; field.</p>
+                      <p className={`font-mono text-xs ${textMuted}`}>The email looks like: something@your-project.iam.gserviceaccount.com</p>
+                    </div>
+                  </div>
+                </div>
                 <ol className="list-decimal list-inside space-y-2 ml-1">
                   <li>Open your Google Sheet.</li>
                   <li>Click the <strong className={textPrimary}>Share</strong> button (top-right, blue button).</li>
@@ -420,6 +467,18 @@ export default function SheetsSetupPage() {
                   <li>Uncheck &quot;Notify people&quot; (the service account doesn&apos;t need an email).</li>
                   <li>Click <strong className={textPrimary}>Share</strong>.</li>
                 </ol>
+                <div className={`p-3 rounded-lg flex items-center gap-2 ${isDark ? 'bg-zinc-900' : 'bg-gray-50'}`}>
+                  <span className={`text-sm ${textMuted}`}>Need to check your service account details?</span>
+                  <a
+                    href="https://console.cloud.google.com/iam-admin/serviceaccounts"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-orange-500 hover:text-orange-400 text-sm font-medium transition-colors"
+                  >
+                    Open Google Cloud Console →
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
                 <div className={`mt-2 p-4 rounded-lg border ${isDark ? 'bg-orange-500/10 border-orange-500/30 text-orange-200' : 'bg-orange-50 border-orange-300 text-orange-800'}`}>
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" />
@@ -434,13 +493,15 @@ export default function SheetsSetupPage() {
             {/* Step 6 */}
             <div className={`rounded-xl border p-6 ${cardBg}`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0">
+                <div className="w-10 h-10 bg-orange-500 text-black rounded-full flex items-center justify-center text-lg font-black flex-shrink-0 mt-0.5">
                   6
                 </div>
-                <div>
-                  <div className={`flex items-center gap-2 mb-1 ${iconBox} w-fit px-2 py-1 rounded-md`}>
-                    <CheckCircle2 className="w-4 h-4 text-orange-500" />
-                    <span className="text-orange-500 text-xs font-semibold">Final Step</span>
+                <div className="flex-1">
+                  <div className={`flex items-center gap-2 mb-1.5`}>
+                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md w-fit ${iconBox}`}>
+                      <CheckCircle2 className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-500 text-xs font-semibold">Final Step</span>
+                    </div>
                   </div>
                   <h3 className={`text-lg font-black ${textPrimary}`}>Paste the Sheet ID in SalesSync</h3>
                 </div>
