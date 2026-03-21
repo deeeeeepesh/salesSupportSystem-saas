@@ -139,6 +139,7 @@ const HOW_IT_WORKS = [
     step: '2',
     title: 'Connect Your Google Sheet',
     desc: 'Paste your Google Sheet ID. We connect securely via service account. No edit access needed. Your sheet stays yours.',
+    link: { href: '/sheets-setup', text: 'See the full setup guide →' },
   },
   {
     step: '3',
@@ -216,6 +217,16 @@ function Navbar({
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
+          <a
+            href="/sheets-setup"
+            className={`text-sm font-semibold px-3 py-1.5 rounded-lg border transition-colors hidden sm:inline-flex items-center ${
+              isDark
+                ? 'border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white'
+                : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:text-gray-900'
+            }`}
+          >
+            Setup Guide
+          </a>
           <span className={`text-sm hidden md:block ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
             For mobile &amp; appliance retailers
           </span>
@@ -463,6 +474,14 @@ function LandingPage() {
                 </div>
                 <h3 className={`font-bold mb-2 text-sm ${textPrimary}`}>{item.title}</h3>
                 <p className={`text-sm leading-relaxed ${textSecondary}`}>{item.desc}</p>
+                {'link' in item && item.link && (
+                  <a
+                    href={item.link.href}
+                    className="text-orange-500 hover:text-orange-400 text-sm font-semibold underline mt-1 inline-block"
+                  >
+                    {item.link.text}
+                  </a>
+                )}
               </div>
             ))}
           </div>
@@ -783,6 +802,11 @@ function LandingPage() {
                 {['Live Price Catalogue', 'Google Sheets Sync', 'Multi-Branch Support', 'Role-Based Access', 'Staff Analytics'].map((item) => (
                   <li key={item}>{item}</li>
                 ))}
+                <li>
+                  <a href="/sheets-setup" className="text-orange-500 hover:text-orange-400 transition-colors">
+                    Google Sheets Setup Guide
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
