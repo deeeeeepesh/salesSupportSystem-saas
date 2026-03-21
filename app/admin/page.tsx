@@ -27,7 +27,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { User } from '@/types';
-import { ArrowLeft, RefreshCw, UserPlus, Shield, Users, Trash2, CreditCard, FileSpreadsheet, Pencil, ExternalLink } from 'lucide-react';
+import { ArrowLeft, RefreshCw, UserPlus, Shield, Users, Trash2, CreditCard, FileSpreadsheet, Pencil, ExternalLink, Copy, Check } from 'lucide-react';
 import { UserAnalytics } from '@/components/admin/UserAnalytics';
 
 // ── Pricing constants (paise) ──────────────────────────────────────────────
@@ -114,6 +114,8 @@ export default function AdminPage() {
   const [isEditingSheet, setIsEditingSheet] = useState(false);
   const [sheetError, setSheetError] = useState('');
   const [sheetSuccess, setSheetSuccess] = useState('');
+  const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   // ── Auth guards ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -166,11 +168,18 @@ export default function AdminPage() {
   const fetchSettings = useCallback(async () => {
     try {
       setSheetLoading(true);
-      const res = await fetch('/api/tenant/settings');
-      if (!res.ok) throw new Error('Failed to fetch settings');
-      const data = await res.json();
+      const [settingsRes, emailRes] = await Promise.all([
+        fetch('/api/tenant/settings'),
+        fetch('/api/service-account-email'),
+      ]);
+      if (!settingsRes.ok) throw new Error('Failed to fetch settings');
+      const data = await settingsRes.json();
       setGoogleSheetId(data.googleSheetId ?? null);
       setSheetIdInput(data.googleSheetId ?? '');
+      if (emailRes.ok) {
+        const emailData = await emailRes.json();
+        setServiceAccountEmail(emailData.serviceAccountEmail ?? null);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -369,6 +378,17 @@ export default function AdminPage() {
     setSheetError('');
   };
 
+  const handleCopyEmail = async () => {
+    if (!serviceAccountEmail) return;
+    try {
+      await navigator.clipboard.writeText(serviceAccountEmail);
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2000);
+    } catch {
+      // clipboard write failed silently
+    }
+  };
+
   // ── Render guards ─────────────────────────────────────────────────────────
   if (status === 'loading' || loading) {
     return (
@@ -458,6 +478,28 @@ export default function AdminPage() {
             ) : isEditingSheet ? (
               <form onSubmit={handleSaveSheet} className="space-y-4">
                 <div className="space-y-2">
+                  <Label>Service Account Email</Label>
+                  {serviceAccountEmail ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <code className="font-mono text-sm break-all bg-muted px-2 py-1 rounded">{serviceAccountEmail}</code>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyEmail}
+                        className="shrink-0"
+                      >
+                        {copiedEmail ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                        <span className="ml-1">{copiedEmail ? 'Copied!' : 'Copy'}</span>
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">Not configured on server</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">Share your Google Sheet with this email as a Viewer (read-only access)</p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="sheetId">Google Spreadsheet ID</Label>
                   <Input
                     id="sheetId"
@@ -475,7 +517,7 @@ export default function AdminPage() {
                   <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                     <li>Go to <strong>Google Cloud Console</strong> → Enable <strong>Google Sheets API</strong></li>
                     <li>Create a <strong>Service Account</strong> → download the JSON key</li>
-                    <li>Share your sheet with the service account&apos;s <strong>client_email</strong> as a Viewer</li>
+                    <li>Share your sheet with the <strong>Service Account Email shown above</strong> (Viewer / read-only access)</li>
                     <li>Copy the <strong>spreadsheet ID</strong> from the sheet URL</li>
                     <li>Paste it above and click Save</li>
                   </ol>
@@ -507,6 +549,25 @@ export default function AdminPage() {
                       <span className="text-sm font-medium text-muted-foreground">Sheet ID:</span>
                       <span className="font-mono text-sm break-all">{googleSheetId}</span>
                     </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-muted-foreground">Service Account Email:</span>
+                      {serviceAccountEmail ? (
+                        <>
+                          <code className="font-mono text-sm break-all">{serviceAccountEmail}</code>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCopyEmail}
+                            className="shrink-0 h-7 px-2"
+                          >
+                            {copiedEmail ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Not configured on server</span>
+                      )}
+                    </div>
                     <a
                       href={`https://docs.google.com/spreadsheets/d/${encodeURIComponent(googleSheetId)}/edit`}
                       target="_blank"
@@ -529,7 +590,28 @@ export default function AdminPage() {
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">Not configured</p>
+                  <>
+                    <p className="text-sm text-muted-foreground italic">Not configured</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-muted-foreground">Service Account Email:</span>
+                      {serviceAccountEmail ? (
+                        <>
+                          <code className="font-mono text-sm break-all">{serviceAccountEmail}</code>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCopyEmail}
+                            className="shrink-0 h-7 px-2"
+                          >
+                            {copiedEmail ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Not configured on server</span>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             )}
