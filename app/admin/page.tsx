@@ -27,7 +27,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { User } from '@/types';
-import { ArrowLeft, RefreshCw, UserPlus, Shield, Users, Trash2, CreditCard } from 'lucide-react';
+import { ArrowLeft, RefreshCw, UserPlus, Shield, Users, Trash2, CreditCard, FileSpreadsheet, Pencil, ExternalLink } from 'lucide-react';
 import { UserAnalytics } from '@/components/admin/UserAnalytics';
 
 // ── Pricing constants (paise) ──────────────────────────────────────────────
@@ -103,6 +103,18 @@ export default function AdminPage() {
   const [formSalesSeats, setFormSalesSeats] = useState(4);
   const [formBranches, setFormBranches] = useState(1);
 
+  // ── Lock-then-edit state ─────────────────────────────────────────────────
+  const [isEditingSeats, setIsEditingSeats] = useState(false);
+
+  // ── Google Sheets settings state ─────────────────────────────────────────
+  const [googleSheetId, setGoogleSheetId] = useState<string | null>(null);
+  const [sheetIdInput, setSheetIdInput] = useState('');
+  const [sheetLoading, setSheetLoading] = useState(true);
+  const [sheetSaving, setSheetSaving] = useState(false);
+  const [isEditingSheet, setIsEditingSheet] = useState(false);
+  const [sheetError, setSheetError] = useState('');
+  const [sheetSuccess, setSheetSuccess] = useState('');
+
   // ── Auth guards ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -151,12 +163,28 @@ export default function AdminPage() {
     }
   }, []);
 
+  const fetchSettings = useCallback(async () => {
+    try {
+      setSheetLoading(true);
+      const res = await fetch('/api/tenant/settings');
+      if (!res.ok) throw new Error('Failed to fetch settings');
+      const data = await res.json();
+      setGoogleSheetId(data.googleSheetId ?? null);
+      setSheetIdInput(data.googleSheetId ?? '');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSheetLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
       fetchUsers();
       fetchSubscription();
+      fetchSettings();
     }
-  }, [status, session, fetchUsers, fetchSubscription]);
+  }, [status, session, fetchUsers, fetchSubscription, fetchSettings]);
 
   // ── Live cost preview ────────────────────────────────────────────────────
   const previewAmount = calcMonthly(formAdminSeats, formManagerSeats, formSalesSeats, formBranches);
@@ -293,11 +321,52 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to save changes');
       setSubscription(data.subscription);
       setSubSuccess(`Plan updated. New monthly amount: ₹${paiseToRupees(data.newMonthlyAmount)}`);
+      setIsEditingSeats(false);
     } catch (err) {
       setSubError(err instanceof Error ? err.message : 'Failed to save changes');
     } finally {
       setSubSaving(false);
     }
+  };
+
+  const handleCancelSeats = () => {
+    if (subscription) {
+      setFormAdminSeats(subscription.adminSeats);
+      setFormManagerSeats(subscription.managerSeats);
+      setFormSalesSeats(subscription.salesSeats);
+    }
+    setIsEditingSeats(false);
+    setSubError('');
+  };
+
+  const handleSaveSheet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSheetSaving(true);
+    setSheetError('');
+    setSheetSuccess('');
+    try {
+      const res = await fetch('/api/tenant/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ googleSheetId: sheetIdInput.trim() || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save settings');
+      setGoogleSheetId(data.googleSheetId ?? null);
+      setSheetIdInput(data.googleSheetId ?? '');
+      setSheetSuccess('Google Sheet ID saved successfully.');
+      setIsEditingSheet(false);
+    } catch (err) {
+      setSheetError(err instanceof Error ? err.message : 'Failed to save settings');
+    } finally {
+      setSheetSaving(false);
+    }
+  };
+
+  const handleCancelSheet = () => {
+    setSheetIdInput(googleSheetId ?? '');
+    setIsEditingSheet(false);
+    setSheetError('');
   };
 
   // ── Render guards ─────────────────────────────────────────────────────────
@@ -343,14 +412,148 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* ── Onboarding banner ─────────────────────────────────────────────── */}
+        {!sheetLoading && !googleSheetId && (
+          <div className="p-4 mb-6 bg-yellow-50 border border-yellow-300 rounded-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-yellow-800 font-medium">
+              ⚠️ Setup incomplete — Your Google Sheet is not connected. Connect it below to start syncing products.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-yellow-400 text-yellow-800 hover:bg-yellow-100 shrink-0"
+              onClick={() => {
+                const el = document.getElementById('google-sheets-card');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setIsEditingSheet(true);
+              }}
+            >
+              Connect Sheet
+            </Button>
+          </div>
+        )}
+
+        {/* ── Google Sheets Integration ────────────────────────────────────── */}
+        <Card className="mb-6" id="google-sheets-card">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileSpreadsheet className="h-5 w-5" />
+                  Google Sheets Integration
+                </CardTitle>
+                <CardDescription>Connect your Google Sheet to sync product data</CardDescription>
+              </div>
+              {!isEditingSheet && session?.user?.role === 'ADMIN' && (
+                <Button variant="outline" size="sm" onClick={() => setIsEditingSheet(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {sheetLoading ? (
+              <p className="text-sm text-muted-foreground">Loading settings…</p>
+            ) : isEditingSheet ? (
+              <form onSubmit={handleSaveSheet} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sheetId">Google Spreadsheet ID</Label>
+                  <Input
+                    id="sheetId"
+                    value={sheetIdInput}
+                    onChange={(e) => setSheetIdInput(e.target.value)}
+                    placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    From the URL: docs.google.com/spreadsheets/d/<strong>[THIS PART]</strong>/edit
+                  </p>
+                </div>
+
+                <div className="p-4 border rounded-lg bg-muted/40 space-y-2 text-sm">
+                  <p className="font-semibold">Setup Instructions</p>
+                  <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                    <li>Go to <strong>Google Cloud Console</strong> → Enable <strong>Google Sheets API</strong></li>
+                    <li>Create a <strong>Service Account</strong> → download the JSON key</li>
+                    <li>Share your sheet with the service account&apos;s <strong>client_email</strong> as a Viewer</li>
+                    <li>Copy the <strong>spreadsheet ID</strong> from the sheet URL</li>
+                    <li>Paste it above and click Save</li>
+                  </ol>
+                </div>
+
+                {sheetError && (
+                  <p className="text-sm text-red-600">{sheetError}</p>
+                )}
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={sheetSaving} className="bg-orange-500 hover:bg-orange-600 text-white">
+                    {sheetSaving ? 'Saving…' : 'Save'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={handleCancelSheet}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-3">
+                {sheetSuccess && (
+                  <div className="p-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
+                    {sheetSuccess}
+                  </div>
+                )}
+                {googleSheetId ? (
+                  <>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium text-muted-foreground">Sheet ID:</span>
+                      <span className="font-mono text-sm break-all">{googleSheetId}</span>
+                    </div>
+                    <a
+                      href={`https://docs.google.com/spreadsheets/d/${encodeURIComponent(googleSheetId)}/edit`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Open sheet
+                    </a>
+                    <div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleRefreshCache}
+                        disabled={refreshingCache}
+                      >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${refreshingCache ? 'animate-spin' : ''}`} />
+                        Sync Now
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Not configured</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* ── Plan & Seats ──────────────────────────────────────────────────── */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Plan &amp; Seats
-            </CardTitle>
-            <CardDescription>View your current plan and adjust seat allocations</CardDescription>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Plan &amp; Seats
+                </CardTitle>
+                <CardDescription>View your current plan and adjust seat allocations</CardDescription>
+              </div>
+              {!isEditingSeats && session?.user?.role === 'ADMIN' && (
+                <Button variant="outline" size="sm" onClick={() => setIsEditingSeats(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {subLoading ? (
@@ -392,131 +595,174 @@ export default function AdminPage() {
                 )}
 
                 {/* Seat adjustment form */}
-                <form onSubmit={handleSaveSeats}>
-                  {/* Seat inputs */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="adminSeats">Admin Seats</Label>
-                      <Input
-                        id="adminSeats"
-                        type="number"
-                        min={1}
-                        value={formAdminSeats}
-                        onChange={(e) => setFormAdminSeats(Math.max(1, parseInt(e.target.value) || 1))}
-                      />
-                      <p className="text-xs text-muted-foreground">Used: {usedSeats.ADMIN}</p>
+                {isEditingSeats ? (
+                  <form onSubmit={handleSaveSeats}>
+                    {/* Seat inputs */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="adminSeats">Admin Seats</Label>
+                        <Input
+                          id="adminSeats"
+                          type="number"
+                          min={1}
+                          value={formAdminSeats}
+                          onChange={(e) => setFormAdminSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                        />
+                        <p className="text-xs text-muted-foreground">Used: {usedSeats.ADMIN}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="managerSeats">Manager Seats</Label>
+                        <Input
+                          id="managerSeats"
+                          type="number"
+                          min={1}
+                          value={formManagerSeats}
+                          onChange={(e) => setFormManagerSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                        />
+                        <p className="text-xs text-muted-foreground">Used: {usedSeats.STORE_MANAGER}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="salesSeats">Staff Seats</Label>
+                        <Input
+                          id="salesSeats"
+                          type="number"
+                          min={4}
+                          value={formSalesSeats}
+                          onChange={(e) => setFormSalesSeats(Math.max(4, parseInt(e.target.value) || 4))}
+                        />
+                        <p className="text-xs text-muted-foreground">Used: {usedSeats.SALES}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="branches">Branches</Label>
+                        <Input
+                          id="branches"
+                          type="number"
+                          min={1}
+                          value={formBranches}
+                          onChange={(e) => setFormBranches(Math.max(1, parseInt(e.target.value) || 1))}
+                        />
+                        <p className="text-xs text-muted-foreground">1st included</p>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="managerSeats">Manager Seats</Label>
-                      <Input
-                        id="managerSeats"
-                        type="number"
-                        min={1}
-                        value={formManagerSeats}
-                        onChange={(e) => setFormManagerSeats(Math.max(1, parseInt(e.target.value) || 1))}
-                      />
-                      <p className="text-xs text-muted-foreground">Used: {usedSeats.STORE_MANAGER}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="salesSeats">Staff Seats</Label>
-                      <Input
-                        id="salesSeats"
-                        type="number"
-                        min={4}
-                        value={formSalesSeats}
-                        onChange={(e) => setFormSalesSeats(Math.max(4, parseInt(e.target.value) || 4))}
-                      />
-                      <p className="text-xs text-muted-foreground">Used: {usedSeats.SALES}</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="branches">Branches</Label>
-                      <Input
-                        id="branches"
-                        type="number"
-                        min={1}
-                        value={formBranches}
-                        onChange={(e) => setFormBranches(Math.max(1, parseInt(e.target.value) || 1))}
-                      />
-                      <p className="text-xs text-muted-foreground">1st included</p>
-                    </div>
-                  </div>
 
-                  {/* Cost breakdown table */}
-                  <div className="border rounded-lg overflow-hidden mb-4">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-muted/60 text-muted-foreground">
-                          <th className="text-left px-4 py-2 font-medium">Role / Item</th>
-                          <th className="text-center px-4 py-2 font-medium">Allocated</th>
-                          <th className="text-center px-4 py-2 font-medium">Used</th>
-                          <th className="text-center px-4 py-2 font-medium">Included</th>
-                          <th className="text-center px-4 py-2 font-medium">Extra</th>
-                          <th className="text-right px-4 py-2 font-medium">Extra Cost</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        <tr>
-                          <td className="px-4 py-2">Admin</td>
-                          <td className="px-4 py-2 text-center">{formAdminSeats}</td>
-                          <td className="px-4 py-2 text-center">{usedSeats.ADMIN}</td>
-                          <td className="px-4 py-2 text-center">{includedAdmins}</td>
-                          <td className="px-4 py-2 text-center">{extraAdmins}</td>
-                          <td className="px-4 py-2 text-right">
-                            {extraAdmins > 0 ? `₹${paiseToRupees(extraAdmins * PRICE_EXTRA_ADMIN)}` : '₹0'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2">Manager</td>
-                          <td className="px-4 py-2 text-center">{formManagerSeats}</td>
-                          <td className="px-4 py-2 text-center">{usedSeats.STORE_MANAGER}</td>
-                          <td className="px-4 py-2 text-center">{includedManagers} (×branches)</td>
-                          <td className="px-4 py-2 text-center">{extraManagers}</td>
-                          <td className="px-4 py-2 text-right">
-                            {extraManagers > 0 ? `₹${paiseToRupees(extraManagers * PRICE_EXTRA_MANAGER)}` : '₹0'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2">Staff</td>
-                          <td className="px-4 py-2 text-center">{formSalesSeats}</td>
-                          <td className="px-4 py-2 text-center">{usedSeats.SALES}</td>
-                          <td className="px-4 py-2 text-center">{includedStaff} (×branches)</td>
-                          <td className="px-4 py-2 text-center">{extraStaff}</td>
-                          <td className="px-4 py-2 text-right">
-                            {extraStaff > 0 ? `₹${paiseToRupees(extraStaff * PRICE_EXTRA_STAFF)}` : '₹0'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-4 py-2">Branch (base)</td>
-                          <td className="px-4 py-2 text-center">{formBranches}</td>
-                          <td className="px-4 py-2 text-center">—</td>
-                          <td className="px-4 py-2 text-center">1</td>
-                          <td className="px-4 py-2 text-center">{extraBranches}</td>
-                          <td className="px-4 py-2 text-right">
-                            {extraBranches > 0
-                              ? `₹${paiseToRupees(extraBranches * PRICE_STORE_BASE)}`
-                              : '₹0'}
-                          </td>
-                        </tr>
-                        <tr className="bg-muted/40 font-semibold">
-                          <td className="px-4 py-2" colSpan={5}>
-                            Base store (1 Admin + 1 Manager + 4 Staff)
-                          </td>
-                          <td className="px-4 py-2 text-right">₹{paiseToRupees(PRICE_STORE_BASE)}</td>
-                        </tr>
-                        <tr className="bg-muted/70 font-bold text-base">
-                          <td className="px-4 py-3" colSpan={5}>
-                            Total monthly
-                          </td>
-                          <td className="px-4 py-3 text-right">₹{paiseToRupees(previewAmount)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                    {/* Cost breakdown table */}
+                    <div className="border rounded-lg overflow-hidden mb-4">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/60 text-muted-foreground">
+                            <th className="text-left px-4 py-2 font-medium">Role / Item</th>
+                            <th className="text-center px-4 py-2 font-medium">Allocated</th>
+                            <th className="text-center px-4 py-2 font-medium">Used</th>
+                            <th className="text-center px-4 py-2 font-medium">Included</th>
+                            <th className="text-center px-4 py-2 font-medium">Extra</th>
+                            <th className="text-right px-4 py-2 font-medium">Extra Cost</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          <tr>
+                            <td className="px-4 py-2">Admin</td>
+                            <td className="px-4 py-2 text-center">{formAdminSeats}</td>
+                            <td className="px-4 py-2 text-center">{usedSeats.ADMIN}</td>
+                            <td className="px-4 py-2 text-center">{includedAdmins}</td>
+                            <td className="px-4 py-2 text-center">{extraAdmins}</td>
+                            <td className="px-4 py-2 text-right">
+                              {extraAdmins > 0 ? `₹${paiseToRupees(extraAdmins * PRICE_EXTRA_ADMIN)}` : '₹0'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2">Manager</td>
+                            <td className="px-4 py-2 text-center">{formManagerSeats}</td>
+                            <td className="px-4 py-2 text-center">{usedSeats.STORE_MANAGER}</td>
+                            <td className="px-4 py-2 text-center">{includedManagers} (×branches)</td>
+                            <td className="px-4 py-2 text-center">{extraManagers}</td>
+                            <td className="px-4 py-2 text-right">
+                              {extraManagers > 0 ? `₹${paiseToRupees(extraManagers * PRICE_EXTRA_MANAGER)}` : '₹0'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2">Staff</td>
+                            <td className="px-4 py-2 text-center">{formSalesSeats}</td>
+                            <td className="px-4 py-2 text-center">{usedSeats.SALES}</td>
+                            <td className="px-4 py-2 text-center">{includedStaff} (×branches)</td>
+                            <td className="px-4 py-2 text-center">{extraStaff}</td>
+                            <td className="px-4 py-2 text-right">
+                              {extraStaff > 0 ? `₹${paiseToRupees(extraStaff * PRICE_EXTRA_STAFF)}` : '₹0'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2">Branch (base)</td>
+                            <td className="px-4 py-2 text-center">{formBranches}</td>
+                            <td className="px-4 py-2 text-center">—</td>
+                            <td className="px-4 py-2 text-center">1</td>
+                            <td className="px-4 py-2 text-center">{extraBranches}</td>
+                            <td className="px-4 py-2 text-right">
+                              {extraBranches > 0
+                                ? `₹${paiseToRupees(extraBranches * PRICE_STORE_BASE)}`
+                                : '₹0'}
+                            </td>
+                          </tr>
+                          <tr className="bg-muted/40 font-semibold">
+                            <td className="px-4 py-2" colSpan={5}>
+                              Base store (1 Admin + 1 Manager + 4 Staff)
+                            </td>
+                            <td className="px-4 py-2 text-right">₹{paiseToRupees(PRICE_STORE_BASE)}</td>
+                          </tr>
+                          <tr className="bg-muted/70 font-bold text-base">
+                            <td className="px-4 py-3" colSpan={5}>
+                              Total monthly
+                            </td>
+                            <td className="px-4 py-3 text-right">₹{paiseToRupees(previewAmount)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
 
-                  <Button type="submit" disabled={subSaving}>
-                    {subSaving ? 'Saving…' : 'Save Changes'}
-                  </Button>
-                </form>
+                    <div className="flex gap-2">
+                      <Button type="submit" disabled={subSaving}>
+                        {subSaving ? 'Saving…' : 'Save Changes'}
+                      </Button>
+                      <Button type="button" variant="outline" onClick={handleCancelSeats}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  /* Locked (read-only) view */
+                  subscription && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/60 text-muted-foreground">
+                            <th className="text-left px-4 py-2 font-medium">Role</th>
+                            <th className="text-center px-4 py-2 font-medium">Seats</th>
+                            <th className="text-center px-4 py-2 font-medium">Used</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          <tr>
+                            <td className="px-4 py-2">Admin</td>
+                            <td className="px-4 py-2 text-center">{subscription.adminSeats}</td>
+                            <td className="px-4 py-2 text-center">{usedSeats.ADMIN}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2">Manager</td>
+                            <td className="px-4 py-2 text-center">{subscription.managerSeats}</td>
+                            <td className="px-4 py-2 text-center">{usedSeats.STORE_MANAGER}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2">Staff</td>
+                            <td className="px-4 py-2 text-center">{subscription.salesSeats}</td>
+                            <td className="px-4 py-2 text-center">{usedSeats.SALES}</td>
+                          </tr>
+                          <tr className="bg-muted/70 font-bold text-base">
+                            <td className="px-4 py-3" colSpan={2}>Monthly amount</td>
+                            <td className="px-4 py-3 text-center">₹{paiseToRupees(subscription.monthlyAmount)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                )}
               </>
             )}
           </CardContent>
@@ -533,10 +779,12 @@ export default function AdminPage() {
                 </CardTitle>
                 <CardDescription>Manage system users and their access</CardDescription>
               </div>
-              <Button onClick={() => setShowCreateUser(!showCreateUser)}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Create User
-              </Button>
+              {session?.user?.role === 'ADMIN' && (
+                <Button onClick={() => setShowCreateUser(!showCreateUser)}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Create User
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -621,68 +869,72 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="flex flex-col lg:flex-row gap-2 w-full lg:w-auto">
-                    {/* Role Selector */}
-                    <div className="w-full lg:w-auto min-w-[150px]">
-                      <Select
-                        value={user.role}
-                        onValueChange={(value: 'SALES' | 'STORE_MANAGER' | 'ADMIN') => handleUpdateRole(user.id, value)}
-                        disabled={user.id === session?.user?.id}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="SALES">Sales</SelectItem>
-                          <SelectItem value="STORE_MANAGER">Store Manager</SelectItem>
-                          <SelectItem value="ADMIN">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggleUserStatus(user.id, user.isActive)}
-                      disabled={user.id === session?.user?.id}
-                      className="w-full lg:w-auto"
-                    >
-                      {user.isActive ? 'Disable' : 'Enable'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleForcePasswordReset(user.id)}
-                      className="w-full lg:w-auto"
-                    >
-                      Reset Password
-                    </Button>
-                    {/* Delete User with Confirmation */}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
+                    {session?.user?.role === 'ADMIN' && (
+                      <>
+                        {/* Role Selector */}
+                        <div className="w-full lg:w-auto min-w-[150px]">
+                          <Select
+                            value={user.role}
+                            onValueChange={(value: 'SALES' | 'STORE_MANAGER' | 'ADMIN') => handleUpdateRole(user.id, value)}
+                            disabled={user.id === session?.user?.id}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="SALES">Sales</SelectItem>
+                              <SelectItem value="STORE_MANAGER">Store Manager</SelectItem>
+                              <SelectItem value="ADMIN">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <Button
-                          variant="destructive"
+                          variant="outline"
                           size="sm"
+                          onClick={() => handleToggleUserStatus(user.id, user.isActive)}
                           disabled={user.id === session?.user?.id}
                           className="w-full lg:w-auto"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {user.isActive ? 'Disable' : 'Enable'}
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete the user <strong>{user.name}</strong> ({user.email}).
-                            This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleForcePasswordReset(user.id)}
+                          className="w-full lg:w-auto"
+                        >
+                          Reset Password
+                        </Button>
+                        {/* Delete User with Confirmation */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={user.id === session?.user?.id}
+                              className="w-full lg:w-auto"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the user <strong>{user.name}</strong> ({user.email}).
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
