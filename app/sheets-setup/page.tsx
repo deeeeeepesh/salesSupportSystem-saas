@@ -293,9 +293,6 @@ export default function SheetsSetupPage() {
                       </p>
                     </div>
                   </div>
-                  <p className={`text-sm mb-3 ml-8 ${textSecondary}`}>
-                    Use our pre-built template — already has all 19 columns and checkboxes set up.
-                  </p>
                   <div className="ml-8">
                     <a
                       href="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/copy"
