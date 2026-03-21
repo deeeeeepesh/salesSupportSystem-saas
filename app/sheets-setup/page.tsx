@@ -295,7 +295,7 @@ export default function SheetsSetupPage() {
                   </div>
                   <div className="ml-8">
                     <a
-                      href="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/copy"
+                      href="https://docs.google.com/spreadsheets/d/16fI6hDPQP1Y-nFrFvCuwDm7yS_vscVSe2K8FiKpMUCE/copy"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block bg-orange-500 hover:bg-orange-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition-colors"
